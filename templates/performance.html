@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% set active_page = "performance" %}
+
+{% block title %}Model Performance & Evaluation - FraudGuard AI{% endblock %}
+{% block page_title %}Model Performance & Benchmark{% endblock %}
+{% block breadcrumb %}
+  <span>FraudGuard</span> / <span class="text-accent-blue">Model Performance</span>
+{% endblock %}
+
+{% block content %}
+<div class="performance-page">
+
+  <!-- 1. Training Control & Progress Header -->
+  <div class="app-card mb-4 border-subtle-custom">
+    <div class="row align-items-center g-3">
+      <div class="col-lg-7">
+        <div class="d-flex align-items-center gap-3">
+          <div class="kpi-icon-wrap" style="background: rgba(188, 140, 255, 0.12); color: var(--accent-purple); width: 44px; height: 44px;">
+            <i class="bi bi-robot fs-4"></i>
+          </div>
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <h3 class="h4 text-primary-custom mb-0">Supervised Classification Pipeline</h3>
+              <span class="badge-custom badge-risk-low" id="training-status-badge">Trained &amp; Validated</span>
+            </div>
+            <div class="text-xs text-secondary-custom mt-1" id="training-status-msg">
+              Models evaluated on stratified 80/20 train-test split with robust scaling.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-5 text-lg-end">
+        <button type="button" class="btn-custom btn-primary-custom" id="btn-start-training">
+          <i class="bi bi-arrow-repeat me-1" id="training-btn-icon"></i>
+          <span id="training-btn-text">Retrain ML Models</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Training Progress Bar (shows while training) -->
+    <div id="training-progress-container" class="mt-3 pt-3 border-top border-subtle-custom d-none">
+      <div class="d-flex justify-content-between text-xs text-secondary-custom mb-1">
+        <span id="training-step-text">Fitting Logistic Regression &amp; Random Forest estimators...</span>
+        <span id="training-progress-percent" class="fw-bold text-accent-blue">0%</span>
+      </div>
+      <div class="custom-progress-container">
+        <div class="custom-progress-bar animated-stripes" id="training-progress-bar" style="width: 0%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Metric Explainer Banner -->
+  <div class="alert-custom alert-custom-info mb-4">
+    <div class="alert-icon fs-5">
+      <i class="bi bi-info-circle-fill"></i>
+    </div>
+    <div class="flex-grow-1">
+      <div class="fw-semibold text-accent-blue mb-1">Evaluation in Highly Imbalanced Regimes (0.172% Target Rate)</div>
+      <div class="text-xs text-secondary-custom">
+        Standard <strong>Accuracy</strong> can be deceptive because predicting "Legitimate" for every transaction yields 99.83% accuracy while missing 100% of financial crimes. We prioritize <strong>Recall (Fraud Sensitivity)</strong> to minimize costly False Negatives and <strong>PR-AUC (Precision-Recall Area)</strong> to measure discrimination on the positive fraud class.
+      </div>
+    </div>
+  </div>
+
+  <!-- Standby message if models not trained -->
+  <div id="no-models-alert" class="app-card text-center p-5 mb-4 d-none">
+    <i class="bi bi-exclamation-diamond text-accent-orange fs-1 d-block mb-3"></i>
+    <h3 class="h4 text-primary-custom mb-2">No Model Checkpoints Found</h3>
+    <p class="text-secondary-custom mb-3">Click the "Retrain ML Models" button above to fit Logistic Regression and Random Forest models on your dataset.</p>
+  </div>
+
+  <div id="metrics-content-wrapper">
+    <!-- 3. Model Comparison Table -->
+    <div class="app-card mb-4">
+      <div class="app-card-header">
+        <div>
+          <h3 class="app-card-title">
+            <i class="bi bi-trophy-fill text-accent-orange"></i>
+            Head-to-Head Model Comparison
+          </h3>
+          <span class="text-xs text-secondary-custom">Comparing baseline linear model against ensemble tree on test partition</span>
+        </div>
+        <span class="badge-custom badge-risk-low">20% Holdout Test Set</span>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table" id="model-comparison-table">
+          <thead>
+            <tr>
+              <th style="width: 28%;">Evaluation Metric</th>
+              <th style="width: 24%;" class="text-accent-blue">Logistic Regression (L2)</th>
+              <th style="width: 24%;" class="text-accent-purple">Random Forest (Ensemble)</th>
+              <th style="width: 24%;">Optimal Benchmark</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <strong>Overall Accuracy</strong>
+                <div class="text-xs text-muted-custom">(TP + TN) / Total</div>
+              </td>
+              <td id="m-lr-acc" class="fw-semibold">0.9991</td>
+              <td id="m-rf-acc" class="fw-semibold text-accent-green">0.9996</td>
+              <td><span class="badge-custom badge-source" id="winner-acc">Random Forest</span></td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Precision (Fraud)</strong>
+                <div class="text-xs text-muted-custom">TP / (TP + FP) &bull; Minimize false alerts</div>
+              </td>
+              <td id="m-lr-prec" class="fw-semibold">0.8793</td>
+              <td id="m-rf-prec" class="fw-semibold text-accent-green">0.9385</td>
+              <td><span class="badge-custom badge-source" id="winner-prec">Random Forest</span></td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Recall (Fraud Sensitivity)</strong>
+                <div class="text-xs text-muted-custom">TP / (TP + FN) &bull; Catch true frauds</div>
+              </td>
+              <td id="m-lr-rec" class="fw-semibold">0.6218</td>
+              <td id="m-rf-rec" class="fw-semibold text-accent-green">0.7908</td>
+              <td><span class="badge-custom badge-source" id="winner-rec">Random Forest (+16.9%)</span></td>
+            </tr>
+            <tr>
+              <td>
+                <strong>F1-Score (Harmonic Mean)</strong>
+                <div class="text-xs text-muted-custom">2 &times; (Prec &times; Rec) / (Prec + Rec)</div>
+              </td>
+              <td id="m-lr-f1" class="fw-semibold">0.7290</td>
+              <td id="m-rf-f1" class="fw-semibold text-accent-green">0.8583</td>
+              <td><span class="badge-custom badge-source" id="winner-f1">Random Forest</span></td>
+            </tr>
+            <tr>
+              <td>
+                <strong>ROC-AUC Score</strong>
+                <div class="text-xs text-muted-custom">Area under Receiver Operating Characteristic</div>
+              </td>
+              <td id="m-lr-roc" class="fw-semibold">0.9743</td>
+              <td id="m-rf-roc" class="fw-semibold text-accent-green">0.9892</td>
+              <td><span class="badge-custom badge-source" id="winner-roc">Random Forest</span></td>
+            </tr>
+            <tr>
+              <td>
+                <strong>PR-AUC Score</strong>
+                <div class="text-xs text-muted-custom">Average Precision on positive fraud class</div>
+              </td>
+              <td id="m-lr-prauc" class="fw-semibold">0.7890</td>
+              <td id="m-rf-prauc" class="fw-semibold text-accent-green">0.8741</td>
+              <td><span class="badge-custom badge-source" id="winner-prauc">Random Forest (+8.5%)</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 4. Charts: ROC & PR Curves -->
+    <div class="row g-3 mb-4">
+      <!-- ROC Curve -->
+      <div class="col-lg-6">
+        <div class="chart-container">
+          <div class="chart-header">
+            <div>
+              <h3 class="chart-title">
+                <i class="bi bi-graph-up text-accent-blue"></i>
+                ROC Curves (FPR vs. TPR)
+              </h3>
+              <div class="chart-subtitle">Receiver Operating Characteristic across classification thresholds</div>
+            </div>
+            <span class="badge-custom badge-risk-low">Higher is Better</span>
+          </div>
+          <div class="chart-body">
+            <canvas id="chart-roc-curve" class="chart-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- PR Curve -->
+      <div class="col-lg-6">
+        <div class="chart-container">
+          <div class="chart-header">
+            <div>
+              <h3 class="chart-title">
+                <i class="bi bi-bezier2 text-accent-purple"></i>
+                Precision-Recall Curves
+              </h3>
+              <div class="chart-subtitle">Precision vs. Recall tradeoff curves for rare fraud class detection</div>
+            </div>
+            <span class="badge-custom badge-risk-low">Key Metric</span>
+          </div>
+          <div class="chart-body">
+            <canvas id="chart-pr-curve" class="chart-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Confusion Matrices (HTML 2x2 Grids) -->
+    <div class="row g-3 mb-4">
+      <!-- Logistic Regression Matrix -->
+      <div class="col-lg-6">
+        <div class="app-card h-100">
+          <div class="app-card-header">
+            <div>
+              <h3 class="app-card-title">
+                <i class="bi bi-grid-fill text-accent-blue"></i>
+                Logistic Regression Confusion Matrix
+              </h3>
+              <span class="text-xs text-secondary-custom">Test Partition (N = 56,962 transactions)</span>
+            </div>
+            <span class="badge-custom badge-source">Linear Baseline</span>
+          </div>
+
+          <div id="cm-lr-container" class="mt-3">
+            <!-- Dynamically populated or rendered via JS function -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Random Forest Matrix -->
+      <div class="col-lg-6">
+        <div class="app-card h-100">
+          <div class="app-card-header">
+            <div>
+              <h3 class="app-card-title">
+                <i class="bi bi-grid-fill text-accent-purple"></i>
+                Random Forest Confusion Matrix
+              </h3>
+              <span class="text-xs text-secondary-custom">Test Partition (N = 56,962 transactions)</span>
+            </div>
+            <span class="badge-custom badge-risk-low">Top Model</span>
+          </div>
+
+          <div id="cm-rf-container" class="mt-3">
+            <!-- Dynamically populated or rendered via JS function -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. Feature Importance Chart (Random Forest) -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="chart-container">
+          <div class="chart-header">
+            <div>
+              <h3 class="chart-title">
+                <i class="bi bi-bar-chart-line-fill text-accent-cyan"></i>
+                Random Forest Gini Feature Importance (Top Features)
+              </h3>
+              <div class="chart-subtitle">Mean Decrease in Impurity across decision tree splits</div>
+            </div>
+            <span class="badge-custom badge-source">Feature Contribution</span>
+          </div>
+          <div class="chart-body" style="min-height: 380px;">
+            <canvas id="chart-feature-importance" class="chart-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. Metric Glossary Accordion -->
+    <div class="app-card mb-4">
+      <div class="app-card-header">
+        <h3 class="app-card-title">
+          <i class="bi bi-book-half text-accent-orange"></i>
+          Machine Learning Metric Glossary
+        </h3>
+        <span class="text-xs text-secondary-custom">Plain-English explanations for evaluators</span>
+      </div>
+
+      <div class="accordion accordion-flush" id="metricGlossaryAccordion">
+        <!-- Item 1: Recall -->
+        <div class="accordion-item bg-transparent border-subtle-custom">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed bg-surface-custom text-primary-custom" type="button" data-bs-toggle="collapse" data-bs-target="#gloss-recall">
+              <i class="bi bi-shield-check text-accent-green me-2"></i>
+              Recall / Sensitivity (Fraud Catch Rate)
+            </button>
+          </h2>
+          <div id="gloss-recall" class="accordion-collapse collapse" data-bs-parent="#metricGlossaryAccordion">
+            <div class="accordion-body text-secondary-custom text-xs">
+              Recall measures what percentage of all real fraudulent transactions the model successfully detected. In credit card fraud, high recall is vital because a missed fraud (False Negative) results in direct financial loss and chargeback fees.
+            </div>
+          </div>
+        </div>
+
+        <!-- Item 2: Precision -->
+        <div class="accordion-item bg-transparent border-subtle-custom">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed bg-surface-custom text-primary-custom" type="button" data-bs-toggle="collapse" data-bs-target="#gloss-precision">
+              <i class="bi bi-bullseye text-accent-blue me-2"></i>
+              Precision (Alert Accuracy)
+            </button>
+          </h2>
+          <div id="gloss-precision" class="accordion-collapse collapse" data-bs-parent="#metricGlossaryAccordion">
+            <div class="accordion-body text-secondary-custom text-xs">
+              Precision indicates what percentage of flagged fraud alerts were actually fraudulent. Higher precision prevents false card declines, reducing customer frustration and friction at checkouts.
+            </div>
+          </div>
+        </div>
+
+        <!-- Item 3: F1-Score -->
+        <div class="accordion-item bg-transparent border-subtle-custom">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed bg-surface-custom text-primary-custom" type="button" data-bs-toggle="collapse" data-bs-target="#gloss-f1">
+              <i class="bi bi-sliders text-accent-purple me-2"></i>
+              F1-Score
+            </button>
+          </h2>
+          <div id="gloss-f1" class="accordion-collapse collapse" data-bs-parent="#metricGlossaryAccordion">
+            <div class="accordion-body text-secondary-custom text-xs">
+              The harmonic mean of Precision and Recall. Unlike simple arithmetic mean, F1 punishes extreme imbalances between Precision and Recall, making it an indispensable measure of balanced model utility.
+            </div>
+          </div>
+        </div>
+
+        <!-- Item 4: PR-AUC -->
+        <div class="accordion-item bg-transparent border-subtle-custom">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed bg-surface-custom text-primary-custom" type="button" data-bs-toggle="collapse" data-bs-target="#gloss-prauc">
+              <i class="bi bi-graph-up-arrow text-accent-cyan me-2"></i>
+              Precision-Recall AUC (PR-AUC)
+            </button>
+          </h2>
+          <div id="gloss-prauc" class="accordion-collapse collapse" data-bs-parent="#metricGlossaryAccordion">
+            <div class="accordion-body text-secondary-custom text-xs">
+              The area under the Precision-Recall curve. On heavily skewed datasets (where negative cases dominate), ROC-AUC can present an overly optimistic score because the True Negative count is huge. PR-AUC focuses exclusively on the positive minority class and is considered the gold standard benchmark for fraud detection.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block page_js %}
+<script src="{{ url_for('static', filename='js/performance.js') }}"></script>
+{% endblock %}

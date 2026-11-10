@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% set active_page = "analytics" %}
+
+{% block title %}Transaction Analytics - FraudGuard AI{% endblock %}
+{% block page_title %}Transaction Analytics & Distribution{% endblock %}
+{% block breadcrumb %}
+  <span>FraudGuard</span> / <span class="text-accent-blue">Transaction Analytics</span>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-page">
+
+  <!-- 1. Header Filter Bar -->
+  <div class="app-card mb-4 p-3 border-subtle-custom">
+    <div class="row g-3 align-items-center justify-content-between">
+      <div class="col-lg-5">
+        <div class="d-flex align-items-center gap-2">
+          <div class="kpi-icon-wrap" style="background: rgba(57, 213, 255, 0.12); color: var(--accent-cyan); width: 36px; height: 36px;">
+            <i class="bi bi-sliders"></i>
+          </div>
+          <div>
+            <h4 class="h5 text-primary-custom mb-0">Exploratory Data Analysis</h4>
+            <span class="text-xs text-secondary-custom">Multivariate distribution and feature correlations</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-7">
+        <div class="d-flex flex-wrap gap-2 justify-content-lg-end align-items-center">
+          <div class="d-flex align-items-center gap-1 bg-elevated-custom px-3 py-1 rounded border-custom">
+            <span class="text-xs text-secondary-custom">Window:</span>
+            <span class="text-xs text-primary-custom fw-semibold">All 48 Hours</span>
+          </div>
+          <div class="d-flex align-items-center gap-1 bg-elevated-custom px-3 py-1 rounded border-custom">
+            <span class="text-xs text-secondary-custom">Class Scope:</span>
+            <span class="text-xs text-accent-blue fw-semibold">Legit &amp; Fraud</span>
+          </div>
+          <button type="button" class="btn-custom btn-secondary-custom text-xs py-1 px-3" id="analytics-refresh-btn">
+            <i class="bi bi-arrow-repeat"></i> Refresh Analytics
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Row 1: Amount Distribution & Hourly Fraud Frequency -->
+  <div class="row g-3 mb-4">
+    <!-- Left: Amount Distribution Grouped Bar -->
+    <div class="col-lg-6">
+      <div class="chart-container">
+        <div class="chart-header">
+          <div>
+            <h3 class="chart-title">
+              <i class="bi bi-bar-chart-steps text-accent-blue"></i>
+              Amount Distribution by Class
+            </h3>
+            <div class="chart-subtitle">Grouped log comparison of transaction volume across value brackets</div>
+          </div>
+          <span class="badge-custom badge-source">Log Scale View</span>
+        </div>
+        <div class="chart-body">
+          <canvas id="chart-analytics-amounts" class="chart-canvas"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Hourly Fraud Rate Bar Chart -->
+    <div class="col-lg-6">
+      <div class="chart-container">
+        <div class="chart-header">
+          <div>
+            <h3 class="chart-title">
+              <i class="bi bi-clock-history text-accent-red"></i>
+              Fraud Frequency by Time (Hourly Bins)
+            </h3>
+            <div class="chart-subtitle">Incident concentration across chronological elapsed transaction hours</div>
+          </div>
+          <span class="badge-custom badge-risk-high">492 Incidents</span>
+        </div>
+        <div class="chart-body">
+          <canvas id="chart-hourly-fraud" class="chart-canvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Row 2: Correlation Heatmap (HTML Table rendered via JS) -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="app-card">
+        <div class="chart-header">
+          <div>
+            <h3 class="chart-title">
+              <i class="bi bi-grid-3x3-gap-fill text-accent-cyan"></i>
+              Feature Correlation Matrix
+            </h3>
+            <div class="chart-subtitle">Pearson correlation coefficients between PCA features (V1-V14), Amount, and Fraud Class</div>
+          </div>
+          <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2 text-xs">
+              <span class="d-inline-block rounded" style="width: 14px; height: 14px; background: rgba(248, 81, 73, 0.7);"></span>
+              <span class="text-secondary-custom">Neg (-1.0)</span>
+            </div>
+            <div class="d-flex align-items-center gap-2 text-xs">
+              <span class="d-inline-block rounded" style="width: 14px; height: 14px; background: #21262d;"></span>
+              <span class="text-secondary-custom">Neutral (0.0)</span>
+            </div>
+            <div class="d-flex align-items-center gap-2 text-xs">
+              <span class="d-inline-block rounded" style="width: 14px; height: 14px; background: rgba(88, 166, 255, 0.7);"></span>
+              <span class="text-secondary-custom">Pos (+1.0)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Heatmap Scrollable Container -->
+        <div class="table-responsive mt-3" style="max-height: 480px; overflow: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md);" id="correlation-table-container">
+          <div class="p-4 text-center text-secondary-custom" id="heatmap-loading">
+            <span class="spinner-border spinner-border-sm text-accent-blue me-2" role="status"></span>
+            Computing correlation matrix...
+          </div>
+        </div>
+
+        <div class="mt-3 text-xs text-secondary-custom d-flex align-items-center gap-2">
+          <i class="bi bi-lightbulb-fill text-accent-orange"></i>
+          <span>Features like <strong>V14, V12, V10, and V4</strong> exhibit the strongest correlation with the Class target, making them critical signals for supervised classifiers.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Row 3: Statistical Summaries (Fraud vs Legit) -->
+  <div class="row g-3 mb-4">
+    <!-- Fraud Stats Card -->
+    <div class="col-lg-6">
+      <div class="app-card h-100 border-top-danger" style="border-top: 3px solid var(--accent-red);">
+        <div class="app-card-header">
+          <div class="d-flex align-items-center gap-2">
+            <div class="kpi-icon-wrap" style="background: rgba(248, 81, 73, 0.12); color: var(--accent-red); width: 32px; height: 32px;">
+              <i class="bi bi-shield-x"></i>
+            </div>
+            <div>
+              <h4 class="h5 text-primary-custom mb-0">Fraudulent Amount Statistics</h4>
+              <span class="text-xs text-accent-red">Class = 1 &bull; 492 confirmed samples</span>
+            </div>
+          </div>
+          <span class="badge-custom badge-risk-high">High Variance</span>
+        </div>
+
+        <div class="row g-3" id="fraud-stats-grid">
+          <div class="col-sm-6">
+            <div class="stat-box">
+              <div class="stat-box-label">Mean Amount</div>
+              <div class="stat-box-val text-accent-red" id="f-stat-mean">-</div>
+              <div class="text-xs text-muted-custom mt-1">Average fraud value</div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="stat-box">
+              <div class="stat-box-label">Standard Deviation</div>
+              <div class="stat-box-val" id="f-stat-std">-</div>
+              <div class="text-xs text-muted-custom mt-1">Dispersion around mean</div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="stat-box">
+              <div class="stat-box-label">Median (50th percentile)</div>
+              <div class="stat-box-val" id="f-stat-q50">-</div>
+              <div class="text-xs text-muted-custom mt-1">Typical transaction size</div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="stat-box">
+              <div class="stat-box-label">Interquartile Range (Q75 - Q25)</div>
+              <div class="stat-box-val" id="f-stat-iqr">-</div>
+              <div class="text-xs text-muted-custom mt-1">25%: <span id="f-stat-q25">-</span> &bull; 75%: <span id="f-stat-q75">-</span></div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="stat-box">
+              <div class="stat-box-label">Minimum Observed</div>
+              <div class="stat-box-val text-secondary-custom" id="f-stat-min">-</div>
+              <div class="text-xs text-muted-custom mt-1">Zero-dollar test attempts</div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="stat-box">
+              <div class="stat-box-label">Maximum Observed</div>
+              <div class="stat-box-val text-accent-red" id="f-stat-max">-</div>
+              <div class="text-xs text-muted-custom mt-1">Largest single fraud txn</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legit Stats Card -->
+    <div class="col-lg-6">
+      <div class="app-card h-100 border-top-success" style="border-top: 3px solid var(--accent-green);">
+        <div class="app-card-header">
+          <div class="d-flex align-items-center gap-2">
+            <div class="kpi-icon-wrap" style="background: rgba(63, 185, 80, 0.12); color: var(--accent-green); width: 32px; height: 32px;">
+              <i class="bi bi-shield-check"></i>
+            </div>
+            <div>
+              <h4 class="h5 text-primary-custom mb-0">Legitimate Amount Statistics</h4>
+              <span class="text-xs text-accent-green">Class = 0 &bull; 284,315 normal transactions</span>
+            </div>
+          </div>
+          <span class="badge-custom badge-risk-low">Baseline</span>
+        </div>
+
+        <div class="row g-3" id="legit-stats-grid">
+          <div class="col-sm-6">
+            <div class="stat-box">
+              <div class="stat-box-label">Mean Amount</div>
+              <div class="stat-box-val text-accent-green" id="l-stat-mean">-</div>
+              <div class="text-xs text-muted-custom mt-1">Standard portfolio average</div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="stat-box">
+              <div class="stat-box-label">Standard Deviation</div>
+              <div class="stat-box-val" id="l-stat-std">-</div>
+              <div class="text-xs text-muted-custom mt-1">Dispersion around mean</div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="stat-box">
+              <div class="stat-box-label">Median (50th percentile)</div>
+              <div class="stat-box-val" id="l-stat-q50">-</div>
+              <div class="text-xs text-muted-custom mt-1">Typical consumer spend</div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="stat-box">
+              <div class="stat-box-label">Interquartile Range (Q75 - Q25)</div>
+              <div class="stat-box-val" id="l-stat-iqr">-</div>
+              <div class="text-xs text-muted-custom mt-1">25%: <span id="l-stat-q25">-</span> &bull; 75%: <span id="l-stat-q75">-</span></div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="stat-box">
+              <div class="stat-box-label">Minimum Observed</div>
+              <div class="stat-box-val text-secondary-custom" id="l-stat-min">-</div>
+              <div class="text-xs text-muted-custom mt-1">Authorization checks ($0.00)</div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="stat-box">
+              <div class="stat-box-label">Maximum Observed</div>
+              <div class="stat-box-val text-accent-cyan" id="l-stat-max">-</div>
+              <div class="text-xs text-muted-custom mt-1">High-value merchant purchase</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Row 4: Class Imbalance Visualization -->
+  <div class="row">
+    <div class="col-12">
+      <div class="app-card">
+        <div class="app-card-header">
+          <div>
+            <h3 class="app-card-title">
+              <i class="bi bi-symmetry-horizontal text-accent-orange"></i>
+              Severe Class Imbalance Demonstration
+            </h3>
+            <span class="text-xs text-secondary-custom">Comparing positive (fraud) to negative (legit) sample ratio</span>
+          </div>
+          <span class="badge-custom badge-risk-medium">Imbalance Ratio: ~578:1</span>
+        </div>
+
+        <!-- Horizontal Stacked Progress Demonstration -->
+        <div class="my-3">
+          <div class="d-flex justify-content-between text-xs mb-1">
+            <span class="text-accent-green fw-semibold"><i class="bi bi-check2-circle"></i> Legitimate: 99.828% (284,315)</span>
+            <span class="text-accent-red fw-semibold"><i class="bi bi-exclamation-triangle-fill"></i> Fraudulent: 0.172% (492)</span>
+          </div>
+          <div class="position-relative" style="height: 24px; background: var(--bg-elevated); border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-color); display: flex;">
+            <div style="width: 99.828%; background: linear-gradient(90deg, #2ea043, #3fb950); height: 100%; transition: width 1s ease;" title="Legitimate: 284,315 (99.828%)"></div>
+            <div style="width: 0.172%; min-width: 4px; background: #f85149; height: 100%; box-shadow: 0 0 10px #f85149;" title="Fraud: 492 (0.172%)"></div>
+          </div>
+        </div>
+
+        <div class="p-3 bg-elevated-custom rounded border-custom">
+          <div class="row align-items-center g-3">
+            <div class="col-md-8">
+              <div class="text-xs text-secondary-custom">
+                <strong class="text-primary-custom">Why standard Accuracy fails:</strong> In a dataset with 99.83% legitimate transactions, a trivial "dummy" model that blindly predicts every transaction as legitimate achieves a <strong>99.83% accuracy</strong>, yet misses 100% of frauds! Machine learning models must be optimized for <strong>Recall, Precision-Recall AUC, and F1-Score</strong>.
+              </div>
+            </div>
+            <div class="col-md-4 text-md-end">
+              <a href="{{ url_for('performance') }}" class="btn-custom btn-primary-custom text-xs">
+                <i class="bi bi-graph-up-arrow"></i> Inspect Model Metrics
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block page_js %}
+<script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+{% endblock %}

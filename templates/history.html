@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% set active_page = "history" %}
+
+{% block title %}Prediction History - FraudGuard AI{% endblock %}
+{% block page_title %}Prediction History & Audit Log{% endblock %}
+{% block breadcrumb %}
+  <span>FraudGuard</span> / <span class="text-accent-blue">Prediction History</span>
+{% endblock %}
+
+{% block content %}
+<div class="history-page">
+
+  <!-- 1. Stats Row (4 KPI Cards) -->
+  <div class="row g-3 mb-4" id="history-stats-row">
+    <!-- Total Predictions -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card kpi-blue">
+        <div class="kpi-header">
+          <span class="kpi-label">Total Inferences</span>
+          <div class="kpi-icon-wrap">
+            <i class="bi bi-clock-history"></i>
+          </div>
+        </div>
+        <div class="kpi-value" id="hist-stat-total">
+          <span class="skeleton skeleton-text" style="width: 50px;"></span>
+        </div>
+        <div class="kpi-footer">
+          <span class="text-xs text-secondary-custom">Logged transactions</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fraud Detected -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card kpi-red">
+        <div class="kpi-header">
+          <span class="kpi-label">Fraud Flagged</span>
+          <div class="kpi-icon-wrap">
+            <i class="bi bi-shield-x"></i>
+          </div>
+        </div>
+        <div class="kpi-value text-accent-red" id="hist-stat-fraud">
+          <span class="skeleton skeleton-text" style="width: 50px;"></span>
+        </div>
+        <div class="kpi-footer">
+          <span class="text-xs text-accent-red">High-risk interventions</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legitimate Predictions -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card kpi-green">
+        <div class="kpi-header">
+          <span class="kpi-label">Approved Legit</span>
+          <div class="kpi-icon-wrap">
+            <i class="bi bi-shield-check"></i>
+          </div>
+        </div>
+        <div class="kpi-value text-accent-green" id="hist-stat-legit">
+          <span class="skeleton skeleton-text" style="width: 50px;"></span>
+        </div>
+        <div class="kpi-footer">
+          <span class="text-xs text-accent-green">Authorized transactions</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Avg Fraud Probability -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card kpi-orange">
+        <div class="kpi-header">
+          <span class="kpi-label">Avg Fraud Risk</span>
+          <div class="kpi-icon-wrap">
+            <i class="bi bi-percent"></i>
+          </div>
+        </div>
+        <div class="kpi-value text-accent-orange" id="hist-stat-avg-prob">
+          <span class="skeleton skeleton-text" style="width: 50px;"></span>
+        </div>
+        <div class="kpi-footer">
+          <span class="text-xs text-secondary-custom">Mean risk index</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Filter & Action Bar -->
+  <div class="app-card mb-4 p-3 border-subtle-custom">
+    <div class="row g-3 align-items-center justify-content-between">
+      <!-- Filters -->
+      <div class="col-md-7">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+          <div class="d-flex align-items-center gap-2">
+            <label for="filter-label" class="form-label-custom mb-0 text-nowrap">Filter Status:</label>
+            <select class="form-select form-select-custom text-xs py-1" id="filter-label" style="width: 140px;">
+              <option value="all">All Classes</option>
+              <option value="fraud">Fraudulent Only</option>
+              <option value="legitimate">Legitimate Only</option>
+            </select>
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <label for="filter-source" class="form-label-custom mb-0 text-nowrap">Source:</label>
+            <select class="form-select form-select-custom text-xs py-1" id="filter-source" style="width: 130px;">
+              <option value="all">All Sources</option>
+              <option value="single">Single Manual</option>
+              <option value="batch">Batch Upload</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="col-md-5 text-md-end">
+        <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+          <button type="button" class="btn-custom btn-outline-custom text-xs" id="btn-export-history">
+            <i class="bi bi-download"></i> Export CSV
+          </button>
+          <button type="button" class="btn-custom btn-danger-custom text-xs" id="btn-open-clear-modal" data-bs-toggle="modal" data-bs-target="#clearHistoryModal">
+            <i class="bi bi-trash3"></i> Clear History
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. History Table Container -->
+  <div class="data-table-container mb-4">
+    <div class="table-responsive">
+      <table class="data-table" id="history-table">
+        <thead>
+          <tr>
+            <th style="width: 60px;">#ID</th>
+            <th>Timestamp</th>
+            <th>Amount ($)</th>
+            <th>Prediction</th>
+            <th>Fraud Risk %</th>
+            <th>Risk Level</th>
+            <th>Model</th>
+            <th>Source</th>
+          </tr>
+        </thead>
+        <tbody id="history-tbody">
+          <!-- Loaded dynamically via history.js -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Empty State (Shown when history is empty) -->
+    <div id="history-empty-state" class="text-center p-5 d-none">
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: var(--bg-elevated); margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center;">
+        <i class="bi bi-inbox fs-2 text-secondary-custom"></i>
+      </div>
+      <h4 class="h5 text-primary-custom mb-2">No Prediction Logs Found</h4>
+      <p class="text-xs text-secondary-custom mb-3">No transactions have been scored yet. Perform single or batch predictions to populate this audit trail.</p>
+      <a href="{{ url_for('detection') }}" class="btn-custom btn-primary-custom text-xs">
+        <i class="bi bi-shield-plus"></i> Go to Fraud Detection
+      </a>
+    </div>
+
+    <!-- Pagination Footer -->
+    <div class="pagination-custom" id="history-pagination">
+      <button class="page-btn" id="btn-page-prev" disabled>
+        <i class="bi bi-chevron-left"></i> Previous
+      </button>
+      <div class="d-flex gap-1" id="pagination-numbers">
+        <!-- Page numbers rendered dynamically -->
+      </div>
+      <button class="page-btn" id="btn-page-next" disabled>
+        Next <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Clear History Confirmation Modal -->
+<div class="modal fade" id="clearHistoryModal" tabindex="-1" aria-labelledby="clearHistoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content modal-content-custom">
+      <div class="modal-header modal-header-custom">
+        <h5 class="modal-title modal-title-custom text-accent-red" id="clearHistoryModalLabel">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i> Confirm Clear History
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4 text-xs text-secondary-custom">
+        <p class="mb-2">Are you sure you want to permanently delete all prediction logs and audit records?</p>
+        <p class="text-muted-custom mb-0">This action cannot be undone. All stored evaluation histories in the SQLite database will be cleared.</p>
+      </div>
+      <div class="modal-footer modal-footer-custom">
+        <button type="button" class="btn-custom btn-secondary-custom text-xs" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn-custom btn-danger-custom text-xs" id="btn-confirm-clear-history">
+          <i class="bi bi-trash-fill"></i> Delete All Records
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block page_js %}
+<script src="{{ url_for('static', filename='js/history.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+
+{% set active_page = "detection" %}
+
+{% block title %}Fraud Detection - FraudGuard AI{% endblock %}
+{% block page_title %}Real-Time Fraud Detection{% endblock %}
+{% block breadcrumb %}
+  <span>FraudGuard</span> / <span class="text-accent-blue">Fraud Detection</span>
+{% endblock %}
+
+{% block content %}
+<div class="detection-page">
+
+  <!-- 1. Disclaimer Warning Banner -->
+  <div class="alert-custom alert-custom-warning mb-4">
+    <div class="alert-icon fs-5">
+      <i class="bi bi-shield-exclamation"></i>
+    </div>
+    <div class="flex-grow-1">
+      <div class="fw-semibold text-accent-orange mb-1">Advisory Notice: Risk Assessment Engine</div>
+      <div class="text-xs text-secondary-custom">
+        These predictions represent statistical model-based risk assessments based on anonymized PCA features and transaction amounts. They are designed to augment fraud analyst investigation workflows and are not guaranteed fraud determinations. High-risk events should undergo secondary validation.
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Model Status Bar -->
+  <div class="app-card mb-4 p-3 border-subtle-custom" id="model-status-card">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="kpi-icon-wrap" id="status-icon-box" style="background: rgba(88, 166, 255, 0.12); color: var(--accent-blue); width: 40px; height: 40px;">
+          <i class="bi bi-cpu"></i>
+        </div>
+        <div>
+          <div class="d-flex align-items-center gap-2">
+            <h4 class="h5 text-primary-custom mb-0" id="active-model-title">Active Inference Model</h4>
+            <span class="badge-custom badge-risk-low" id="model-status-badge">Model Ready</span>
+          </div>
+          <div class="text-xs text-secondary-custom mt-1" id="active-model-meta">
+            Classifier: Random Forest (Default) &bull; Threshold: 0.50 &bull; 30 Input Dimensions
+          </div>
+        </div>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <a href="{{ url_for('performance') }}" class="btn-custom btn-outline-custom text-xs">
+          <i class="bi bi-gear-wide-connected"></i> Model Metrics &amp; Retraining
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Tabs Navigation (Single vs Batch) -->
+  <ul class="nav nav-pills custom-pills mb-4" id="detectionTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="single-tab" data-bs-toggle="pill" data-bs-target="#single-pane" type="button" role="tab">
+        <i class="bi bi-input-cursor-text me-2"></i> Single Transaction Scoring
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="batch-tab" data-bs-toggle="pill" data-bs-target="#batch-pane" type="button" role="tab">
+        <i class="bi bi-file-earmark-spreadsheet me-2"></i> Batch CSV Scoring
+      </button>
+    </li>
+  </ul>
+
+  <!-- Tab Contents -->
+  <div class="tab-content" id="detectionTabContent">
+
+    <!-- ==========================================
+         TAB 1: SINGLE TRANSACTION ANALYSIS
+         ========================================== -->
+    <div class="tab-pane fade show active" id="single-pane" role="tabpanel">
+      <div class="row g-4">
+        <!-- Form Column -->
+        <div class="col-lg-8">
+          <div class="app-card">
+            <div class="app-card-header">
+              <div>
+                <h3 class="app-card-title">
+                  <i class="bi bi-sliders2 text-accent-blue"></i>
+                  Transaction Feature Vectors
+                </h3>
+                <span class="text-xs text-secondary-custom">Enter PCA features V1-V28, elapsed time, and transaction amount</span>
+              </div>
+
+              <!-- Quick fill presets -->
+              <div class="btn-group">
+                <button type="button" class="btn-custom btn-secondary-custom text-xs py-1" id="btn-fill-fraud" title="Populate known fraud patterns (high negative V14, V12)">
+                  <i class="bi bi-bug-fill text-accent-red"></i> Load Fraud Sample
+                </button>
+                <button type="button" class="btn-custom btn-secondary-custom text-xs py-1" id="btn-fill-legit" title="Populate normal transaction pattern">
+                  <i class="bi bi-check-circle-fill text-accent-green"></i> Load Legit Sample
+                </button>
+                <button type="button" class="btn-custom btn-secondary-custom text-xs py-1" id="btn-reset-form">
+                  <i class="bi bi-arrow-counterclockwise"></i> Reset
+                </button>
+              </div>
+            </div>
+
+            <form id="single-predict-form">
+              <!-- Primary Metadata: Amount & Time -->
+              <div class="row g-3 mb-4 p-3 bg-elevated-custom rounded border-custom">
+                <div class="col-md-6">
+                  <label for="input-amount" class="form-label-custom">
+                    Transaction Amount ($) <span class="text-accent-red">*</span>
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-surface-custom border-custom text-secondary-custom">$</span>
+                    <input type="number" class="form-control form-control-custom" id="input-amount" step="0.01" min="0" max="30000" placeholder="e.g. 149.62" required>
+                  </div>
+                  <div class="text-xs text-muted-custom mt-1">Transaction value in USD (Range: 0 - 30,000)</div>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="input-time" class="form-label-custom">
+                    Elapsed Time (Seconds)
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-surface-custom border-custom text-secondary-custom">
+                      <i class="bi bi-clock"></i>
+                    </span>
+                    <input type="number" class="form-control form-control-custom" id="input-time" step="1" min="0" placeholder="e.g. 406.0" value="0.0">
+                  </div>
+                  <div class="text-xs text-muted-custom mt-1">Seconds elapsed since first transaction in dataset</div>
+                </div>
+              </div>
+
+              <!-- PCA Features V1 to V28 in 4 Rows of 7 -->
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <label class="form-label-custom mb-0">
+                    Principal Component Features (V1 &ndash; V28)
+                  </label>
+                  <span class="text-xs text-muted-custom">PCA-transformed anonymized vectors</span>
+                </div>
+
+                <!-- 7 Columns Grid -->
+                <div class="row g-2" id="pca-features-grid">
+                  <!-- Populated or rendered dynamically or statically: 4 rows x 7 cols = 28 inputs -->
+                  {% for i in range(1, 29) %}
+                  <div class="col-6 col-sm-4 col-md-3 col-xl" style="min-width: 13.5%;">
+                    <div class="feature-input-wrap">
+                      <label for="input-v{{ i }}" class="text-xs text-secondary-custom d-block mb-1 text-center" title="PCA feature V{{ i }}">V{{ i }}</label>
+                      <input type="number" step="0.0001" class="form-control form-control-custom text-center py-1 px-1 text-xs pca-feature-input" id="input-v{{ i }}" name="V{{ i }}" value="0.0000">
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <!-- Submit Button -->
+              <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top border-subtle-custom">
+                <div class="text-xs text-secondary-custom">
+                  <i class="bi bi-info-circle me-1"></i> Scores are computed with trained machine learning estimators.
+                </div>
+                <button type="submit" class="btn-custom btn-primary-custom px-4" id="btn-submit-single">
+                  <span class="spinner-border spinner-border-sm me-2 d-none" id="single-predict-spinner"></span>
+                  <i class="bi bi-search me-1" id="single-predict-icon"></i> Analyze Transaction
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Result Column -->
+        <div class="col-lg-4">
+          <!-- Standby Empty State Card -->
+          <div class="app-card text-center p-4 h-100 d-flex flex-column justify-content-center align-items-center" id="single-result-placeholder">
+            <div class="mb-3" style="width: 68px; height: 68px; border-radius: 50%; background: var(--bg-elevated); display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 1px solid var(--border-color);">
+              <i class="bi bi-shield-check text-secondary-custom fs-2"></i>
+            </div>
+            <h4 class="h5 text-primary-custom mb-1">Awaiting Transaction</h4>
+            <p class="text-xs text-secondary-custom mb-0">Fill in the feature inputs and click "Analyze Transaction" to inspect classification results and probability scores.</p>
+          </div>
+
+          <!-- Dynamic Result Card (Initially Hidden) -->
+          <div class="app-card h-100 d-none" id="single-result-card">
+            <div class="app-card-header pb-2">
+              <span class="text-xs text-secondary-custom text-uppercase fw-bold">Classification Result</span>
+              <span class="text-xs text-muted-custom" id="result-timestamp">-</span>
+            </div>
+
+            <!-- Big Outcome Banner -->
+            <div class="text-center my-3 p-3 rounded" id="result-banner">
+              <div class="mb-2" id="result-badge-container">
+                <!-- Large Badge injected via JS -->
+              </div>
+              <h3 class="h4 mb-1" id="result-label-text">Legitimate</h3>
+              <div class="text-xs text-secondary-custom" id="result-risk-text">Assessed as Low Risk</div>
+            </div>
+
+            <!-- Probability Meter -->
+            <div class="prob-meter-wrapper my-3">
+              <div class="d-flex justify-content-between text-xs mb-1">
+                <span class="text-secondary-custom">Fraud Risk Score</span>
+                <span class="fw-bold" id="result-fraud-pct">0.0%</span>
+              </div>
+              <div class="prob-meter-track">
+                <div class="prob-meter-fill fill-green" id="result-meter-fill" style="width: 0%;"></div>
+              </div>
+              <div class="prob-meter-labels">
+                <span>0% (Safe)</span>
+                <span>50% (Threshold)</span>
+                <span>100% (Critical)</span>
+              </div>
+            </div>
+
+            <!-- Detailed Metrics Breakdown -->
+            <div class="p-3 bg-elevated-custom rounded border-custom mb-3">
+              <div class="d-flex justify-content-between text-xs py-1 border-bottom border-subtle-custom">
+                <span class="text-secondary-custom">Legitimate Probability:</span>
+                <span class="text-accent-green fw-semibold" id="result-legit-pct">0.0%</span>
+              </div>
+              <div class="d-flex justify-content-between text-xs py-1 border-bottom border-subtle-custom">
+                <span class="text-secondary-custom">Risk Classification:</span>
+                <span id="result-risk-badge" class="badge-custom badge-risk-low">Low</span>
+              </div>
+              <div class="d-flex justify-content-between text-xs py-1">
+                <span class="text-secondary-custom">Model Classifier:</span>
+                <span class="text-primary-custom fw-semibold" id="result-model-used">RandomForest</span>
+              </div>
+            </div>
+
+            <!-- Recommendation Callout -->
+            <div class="alert-custom p-2 mb-0" id="result-recommendation" style="font-size: 11.5px;">
+              <i class="bi bi-shield-check text-accent-green fs-6"></i>
+              <span>Transaction characteristics match standard normal patterns. No security action required.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         TAB 2: BATCH CSV UPLOAD
+         ========================================== -->
+    <div class="tab-pane fade" id="batch-pane" role="tabpanel">
+      <div class="row g-4">
+        <div class="col-lg-5">
+          <div class="app-card h-100">
+            <div class="app-card-header">
+              <div>
+                <h3 class="app-card-title">
+                  <i class="bi bi-file-earmark-arrow-up text-accent-cyan"></i>
+                  Batch File Ingestion
+                </h3>
+                <span class="text-xs text-secondary-custom">Score bulk transactions simultaneously via CSV</span>
+              </div>
+            </div>
+
+            <div class="upload-dropzone my-3" id="batch-dropzone">
+              <input type="file" id="batch-file-input" accept=".csv" class="d-none">
+              <div class="upload-icon-wrapper" style="background: rgba(57, 213, 255, 0.1); color: var(--accent-cyan);">
+                <i class="bi bi-file-earmark-spreadsheet-fill"></i>
+              </div>
+              <h4 class="h5 text-primary-custom mb-1">Select or Drag CSV File</h4>
+              <p class="text-xs text-secondary-custom mb-3">Upload transactions with V1-V28, Amount, and Time columns</p>
+              <button type="button" class="btn-custom btn-primary-custom" id="batch-browse-btn">
+                <i class="bi bi-folder-fill"></i> Select Batch CSV
+              </button>
+              <div id="batch-file-name" class="mt-2 text-xs text-accent-cyan fw-medium d-none"></div>
+            </div>
+
+            <!-- Actions & Helpers -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <button type="button" class="btn-custom btn-outline-custom text-xs" id="btn-download-sample-csv">
+                <i class="bi bi-download"></i> Download Sample CSV
+              </button>
+              <button type="button" class="btn-custom btn-success-custom text-xs" id="btn-run-batch-predict" disabled>
+                <i class="bi bi-play-fill"></i> Score Batch Data
+              </button>
+            </div>
+
+            <!-- Batch Progress -->
+            <div id="batch-progress-wrap" class="d-none mt-2">
+              <div class="d-flex justify-content-between text-xs text-secondary-custom mb-1">
+                <span id="batch-progress-text">Processing transactions...</span>
+              </div>
+              <div class="custom-progress-container">
+                <div class="custom-progress-bar animated-stripes" style="width: 100%;"></div>
+              </div>
+            </div>
+
+            <!-- Schema Specifications -->
+            <div class="p-3 bg-elevated-custom rounded border-custom text-xs mt-3">
+              <div class="fw-semibold text-primary-custom mb-1">CSV Header Requirements:</div>
+              <ul class="text-secondary-custom ps-3 mb-0" style="line-height: 1.6;">
+                <li><code>Time</code> (seconds elapsed)</li>
+                <li><code>V1, V2, ... V28</code> (anonymized numeric floats)</li>
+                <li><code>Amount</code> (transaction dollar amount)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Batch Results Column -->
+        <div class="col-lg-7">
+          <div class="app-card h-100 d-flex flex-column">
+            <div class="app-card-header">
+              <div>
+                <h3 class="app-card-title">
+                  <i class="bi bi-table text-accent-purple"></i>
+                  Batch Scoring Results
+                </h3>
+                <span class="text-xs text-secondary-custom" id="batch-results-meta">Awaiting batch processing</span>
+              </div>
+              <button type="button" class="btn-custom btn-outline-custom text-xs d-none" id="btn-download-batch-results">
+                <i class="bi bi-download"></i> Export Results CSV
+              </button>
+            </div>
+
+            <!-- Batch Summary Stats (Hidden initially) -->
+            <div id="batch-summary-stats" class="row g-2 mb-3 d-none">
+              <div class="col-3">
+                <div class="stat-box text-center p-2">
+                  <div class="stat-box-label text-xs">Total Processed</div>
+                  <div class="fw-bold fs-5 text-primary-custom" id="batch-total-count">0</div>
+                </div>
+              </div>
+              <div class="col-3">
+                <div class="stat-box text-center p-2">
+                  <div class="stat-box-label text-xs text-accent-red">Fraud Flagged</div>
+                  <div class="fw-bold fs-5 text-accent-red" id="batch-fraud-count">0</div>
+                </div>
+              </div>
+              <div class="col-3">
+                <div class="stat-box text-center p-2">
+                  <div class="stat-box-label text-xs text-accent-green">Approved Legit</div>
+                  <div class="fw-bold fs-5 text-accent-green" id="batch-legit-count">0</div>
+                </div>
+              </div>
+              <div class="col-3">
+                <div class="stat-box text-center p-2">
+                  <div class="stat-box-label text-xs text-accent-orange">Fraud Rate</div>
+                  <div class="fw-bold fs-5 text-accent-orange" id="batch-fraud-rate">0.0%</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Batch Preview Table -->
+            <div class="table-responsive flex-grow-1" style="min-height: 280px; max-height: 380px;">
+              <table class="data-table" id="batch-preview-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Amount</th>
+                    <th>Prediction</th>
+                    <th>Fraud Prob</th>
+                    <th>Risk</th>
+                  </tr>
+                </thead>
+                <tbody id="batch-preview-tbody">
+                  <tr>
+                    <td colspan="5" class="text-center text-muted-custom py-5">
+                      <i class="bi bi-file-earmark-bar-graph fs-2 d-block mb-2"></i>
+                      No batch results to display yet. Upload a CSV to preview annotated scores.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block page_js %}
+<script src="{{ url_for('static', filename='js/detection.js') }}"></script>
+{% endblock %}

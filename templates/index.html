@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% set active_page = "dashboard" %}
+
+{% block title %}Dashboard Overview - FraudGuard AI{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock %}
+{% block breadcrumb %}
+  <span>FraudGuard</span> / <span class="text-accent-blue">Dashboard</span>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+
+  <!-- 1. Dataset Upload Section (Visible when dataset is not loaded, collapsible once loaded) -->
+  <section id="upload-section" class="mb-4">
+    <div class="app-card border-subtle-custom">
+      <div class="row align-items-center g-4">
+        <div class="col-lg-6">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="badge-custom badge-risk-medium">
+              <i class="bi bi-cloud-arrow-up"></i> Data Required
+            </span>
+            <span class="text-xs text-secondary-custom">creditcard.csv (~150 MB)</span>
+          </div>
+          <h2 class="h3 text-primary-custom mb-2">Upload Credit Card Dataset</h2>
+          <p class="text-secondary-custom mb-3">
+            To explore analytics, visualize time series patterns, and power ML models, upload the ULB Kaggle Credit Card Fraud Detection dataset containing 284,807 transactions.
+          </p>
+          <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+            <a href="https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud" target="_blank" rel="noopener noreferrer" class="btn-custom btn-outline-custom text-xs">
+              <i class="bi bi-box-arrow-up-right"></i> Download from Kaggle
+            </a>
+            <span class="text-xs text-muted-custom">Contains 284,807 rows &bull; 31 numerical features (V1-V28, Time, Amount, Class)</span>
+          </div>
+
+          <!-- Upload Feedback Alert -->
+          <div id="upload-feedback" class="d-none"></div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="upload-dropzone" id="dataset-dropzone">
+            <input type="file" id="dataset-file-input" accept=".csv" class="d-none">
+            <div class="upload-icon-wrapper">
+              <i class="bi bi-cloud-arrow-up-fill" id="upload-icon"></i>
+            </div>
+            <h4 class="h5 text-primary-custom mb-1">Drag & Drop creditcard.csv here</h4>
+            <p class="text-xs text-secondary-custom mb-3">or click anywhere in this box to select from disk</p>
+            <button type="button" class="btn-custom btn-primary-custom" id="browse-btn">
+              <i class="bi bi-folder2-open"></i> Select CSV File
+            </button>
+            <div id="upload-file-name" class="mt-2 text-xs text-accent-blue fw-medium d-none"></div>
+          </div>
+
+          <!-- Upload Progress Bar (hidden by default) -->
+          <div id="upload-progress-wrap" class="mt-3 d-none">
+            <div class="d-flex justify-content-between text-xs text-secondary-custom mb-1">
+              <span id="upload-progress-text">Uploading dataset...</span>
+              <span id="upload-progress-percent">0%</span>
+            </div>
+            <div class="custom-progress-container">
+              <div class="custom-progress-bar animated-stripes" id="upload-progress-bar" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Training CTA Banner (Visible if models not trained) -->
+  <section id="training-cta-section" class="mb-4 d-none">
+    <div class="cta-banner">
+      <div class="d-flex align-items-center gap-3">
+        <div class="kpi-icon-wrap" style="background: rgba(88, 166, 255, 0.15); color: var(--accent-blue); width: 44px; height: 44px;">
+          <i class="bi bi-cpu-fill fs-5"></i>
+        </div>
+        <div>
+          <h4 class="h5 text-primary-custom mb-1">Machine Learning Models Not Trained</h4>
+          <p class="text-xs text-secondary-custom mb-0">Train Logistic Regression and Random Forest classifiers on the active dataset to activate real-time fraud detection scoring.</p>
+        </div>
+      </div>
+      <a href="{{ url_for('performance') }}" class="btn-custom btn-primary-custom">
+        <i class="bi bi-play-circle-fill"></i> Train ML Models
+      </a>
+    </div>
+  </section>
+
+  <!-- 3. KPI Cards Row (6 Cards) -->
+  <section class="mb-4" id="kpi-row">
+    <div class="row g-3">
+      <!-- Total Transactions -->
+      <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="kpi-card kpi-blue">
+          <div class="kpi-header">
+            <span class="kpi-label">Total Transactions</span>
+            <div class="kpi-icon-wrap">
+              <i class="bi bi-credit-card"></i>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-total-tx">
+            <span class="skeleton skeleton-text" style="width: 80px;"></span>
+          </div>
+          <div class="kpi-footer">
+            <i class="bi bi-database text-accent-blue"></i>
+            <span id="kpi-dataset-name">creditcard.csv</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fraudulent Transactions -->
+      <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="kpi-card kpi-red">
+          <div class="kpi-header">
+            <span class="kpi-label">Fraudulent</span>
+            <div class="kpi-icon-wrap">
+              <i class="bi bi-exclamation-triangle"></i>
+            </div>
+          </div>
+          <div class="kpi-value text-accent-red" id="kpi-fraud-tx">
+            <span class="skeleton skeleton-text" style="width: 60px;"></span>
+          </div>
+          <div class="kpi-footer">
+            <span class="trend-indicator trend-up">
+              <i class="bi bi-shield-x"></i> High Risk
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Legitimate Transactions -->
+      <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="kpi-card kpi-green">
+          <div class="kpi-header">
+            <span class="kpi-label">Legitimate</span>
+            <div class="kpi-icon-wrap">
+              <i class="bi bi-check-circle"></i>
+            </div>
+          </div>
+          <div class="kpi-value text-accent-green" id="kpi-legit-tx">
+            <span class="skeleton skeleton-text" style="width: 80px;"></span>
+          </div>
+          <div class="kpi-footer">
+            <span class="trend-indicator trend-down">
+              <i class="bi bi-shield-check"></i> 99.8% Normal
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fraud Rate % -->
+      <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="kpi-card kpi-orange">
+          <div class="kpi-header">
+            <span class="kpi-label">Fraud Rate</span>
+            <div class="kpi-icon-wrap">
+              <i class="bi bi-percent"></i>
+            </div>
+          </div>
+          <div class="kpi-value text-accent-orange" id="kpi-fraud-rate">
+            <span class="skeleton skeleton-text" style="width: 60px;"></span>
+          </div>
+          <div class="kpi-footer text-muted-custom">
+            <span>Severe class imbalance</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Amount $ -->
+      <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="kpi-card kpi-cyan">
+          <div class="kpi-header">
+            <span class="kpi-label">Total Volume</span>
+            <div class="kpi-icon-wrap">
+              <i class="bi bi-currency-dollar"></i>
+            </div>
+          </div>
+          <div class="kpi-value text-accent-cyan" id="kpi-total-amount">
+            <span class="skeleton skeleton-text" style="width: 90px;"></span>
+          </div>
+          <div class="kpi-footer text-muted-custom">
+            <span>Aggregated transaction sum</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Avg Transaction $ -->
+      <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="kpi-card kpi-purple">
+          <div class="kpi-header">
+            <span class="kpi-label">Avg Transaction</span>
+            <div class="kpi-icon-wrap">
+              <i class="bi bi-calculator"></i>
+            </div>
+          </div>
+          <div class="kpi-value text-accent-purple" id="kpi-avg-amount">
+            <span class="skeleton skeleton-text" style="width: 70px;"></span>
+          </div>
+          <div class="kpi-footer text-muted-custom">
+            <span>Mean value per txn</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Charts Row 1: Distribution & Time Series -->
+  <section class="mb-4">
+    <div class="row g-3">
+      <!-- Left: Class Distribution Doughnut -->
+      <div class="col-lg-5">
+        <div class="chart-container">
+          <div class="chart-header">
+            <div>
+              <h3 class="chart-title">
+                <i class="bi bi-pie-chart-fill text-accent-blue"></i>
+                Class Distribution Ratio
+              </h3>
+              <div class="chart-subtitle">Legitimate vs. Fraudulent proportions</div>
+            </div>
+            <span class="badge-custom badge-risk-low" id="dist-ratio-badge">99.8% / 0.2%</span>
+          </div>
+          <div class="chart-body d-flex align-items-center justify-content-center">
+            <canvas id="chart-distribution" class="chart-canvas"></canvas>
+          </div>
+          <div class="row g-2 mt-3 pt-3 border-top border-subtle-custom text-center">
+            <div class="col-6">
+              <div class="text-xs text-secondary-custom">Legitimate Count</div>
+              <div class="fw-bold text-accent-green" id="dist-legit-count">-</div>
+            </div>
+            <div class="col-6">
+              <div class="text-xs text-secondary-custom">Fraudulent Count</div>
+              <div class="fw-bold text-accent-red" id="dist-fraud-count">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Dual-Axis Time Series -->
+      <div class="col-lg-7">
+        <div class="chart-container">
+          <div class="chart-header">
+            <div>
+              <h3 class="chart-title">
+                <i class="bi bi-graph-up text-accent-cyan"></i>
+                Transaction Volume Over Time (48 Hours)
+              </h3>
+              <div class="chart-subtitle">Dual-scale timeline tracking legitimate volume vs. fraud incidents</div>
+            </div>
+            <div class="d-flex gap-2">
+              <span class="badge-custom" style="background: rgba(88, 166, 255, 0.15); color: var(--accent-blue);">
+                <i class="bi bi-circle-fill text-accent-blue" style="font-size: 8px;"></i> Legit (Left Y)
+              </span>
+              <span class="badge-custom" style="background: rgba(248, 81, 73, 0.15); color: var(--accent-red);">
+                <i class="bi bi-circle-fill text-accent-red" style="font-size: 8px;"></i> Fraud (Right Y)
+              </span>
+            </div>
+          </div>
+          <div class="chart-body">
+            <canvas id="chart-timeseries" class="chart-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Charts Row 2: Amount Range & Stats Table -->
+  <section class="mb-4">
+    <div class="row g-3">
+      <!-- Left: Amount Range Bar Chart -->
+      <div class="col-lg-7">
+        <div class="chart-container">
+          <div class="chart-header">
+            <div>
+              <h3 class="chart-title">
+                <i class="bi bi-bar-chart-fill text-accent-purple"></i>
+                Transactions by Amount Range
+              </h3>
+              <div class="chart-subtitle">Volume distribution across monetary brackets</div>
+            </div>
+          </div>
+          <div class="chart-body">
+            <canvas id="chart-amount-ranges" class="chart-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Stats Comparison Table -->
+      <div class="col-lg-5">
+        <div class="stat-comparison-card h-100 d-flex flex-direction-column">
+          <div class="app-card-header">
+            <h3 class="app-card-title">
+              <i class="bi bi-layout-split text-accent-orange"></i>
+              Statistical Comparison
+            </h3>
+            <span class="text-xs text-muted-custom">Fraud vs Legit</span>
+          </div>
+
+          <div class="table-responsive flex-grow-1">
+            <table class="data-table" id="dashboard-stats-table">
+              <thead>
+                <tr>
+                  <th>Metric ($)</th>
+                  <th class="text-accent-green">Legitimate</th>
+                  <th class="text-accent-red">Fraudulent</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Mean Amount</td>
+                  <td id="stat-legit-mean" class="fw-semibold">-</td>
+                  <td id="stat-fraud-mean" class="fw-semibold text-accent-red">-</td>
+                </tr>
+                <tr>
+                  <td>Median (Q50)</td>
+                  <td id="stat-legit-q50">-</td>
+                  <td id="stat-fraud-q50">-</td>
+                </tr>
+                <tr>
+                  <td>Std Deviation</td>
+                  <td id="stat-legit-std">-</td>
+                  <td id="stat-fraud-std">-</td>
+                </tr>
+                <tr>
+                  <td>Min Amount</td>
+                  <td id="stat-legit-min">-</td>
+                  <td id="stat-fraud-min">-</td>
+                </tr>
+                <tr>
+                  <td>Max Amount</td>
+                  <td id="stat-legit-max">-</td>
+                  <td id="stat-fraud-max" class="text-accent-red">-</td>
+                </tr>
+                <tr>
+                  <td>Interquartile (Q75)</td>
+                  <td id="stat-legit-q75">-</td>
+                  <td id="stat-fraud-q75">-</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="p-3 mt-3 bg-elevated-custom rounded border-custom">
+            <div class="d-flex align-items-center gap-2 text-xs text-secondary-custom">
+              <i class="bi bi-info-circle-fill text-accent-blue"></i>
+              <span>Fraudulent transactions show a higher mean amount ($122.21 vs $88.29) with tighter median variance around micro-charges.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block page_js %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

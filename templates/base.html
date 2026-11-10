@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="FraudGuard AI - Advanced Credit Card Fraud Detection, Analytics, and Real-Time Machine Learning Scoring Platform">
+  <meta name="author" content="FraudGuard AI">
+  <title>{% block title %}FraudGuard AI - Credit Card Fraud Detection & Analytics{% endblock %}</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5.3 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <!-- Chart.js 4.4 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+
+  {% block extra_css %}{% endblock %}
+
+  <!-- Global Application Configuration -->
+  <script>
+    window.CONFIG = {
+      API_BASE: '',
+      CHART_COLORS: {
+        blue: '#58a6ff',
+        cyan: '#39d5ff',
+        green: '#3fb950',
+        red: '#f85149',
+        orange: '#e3b341',
+        purple: '#bc8cff',
+        textPrimary: '#e6edf3',
+        textSecondary: '#8b949e',
+        gridColor: '#30363d',
+        surface: '#161b22',
+        elevated: '#21262d'
+      }
+    };
+  </script>
+</head>
+<body>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div id="sidebar-backdrop" class="d-lg-none position-fixed top-0 start-0 w-100 h-100 bg-black opacity-50 z-3" style="display: none;"></div>
+
+  <!-- Main Sidebar -->
+  <aside class="sidebar" id="app-sidebar">
+    <!-- Brand Header -->
+    <a href="{{ url_for('index') }}" class="sidebar-brand">
+      <div class="brand-icon">
+        <i class="bi bi-shield-lock-fill"></i>
+      </div>
+      <div>
+        <div class="brand-text-title">FraudGuard AI</div>
+        <div class="brand-text-subtitle">Detection & Analytics</div>
+      </div>
+    </a>
+
+    <!-- Navigation Menu -->
+    <div class="sidebar-nav-container">
+      <div class="sidebar-heading">Analytics & Overview</div>
+      <ul class="sidebar-nav">
+        <li class="nav-item">
+          <a href="{{ url_for('index') }}" class="nav-link-custom {% if active_page == 'dashboard' %}active{% endif %}">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ url_for('analytics') }}" class="nav-link-custom {% if active_page == 'analytics' %}active{% endif %}">
+            <i class="bi bi-bar-chart-line"></i>
+            <span>Transaction Analytics</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-heading">Machine Learning</div>
+      <ul class="sidebar-nav">
+        <li class="nav-item">
+          <a href="{{ url_for('detection') }}" class="nav-link-custom {% if active_page == 'detection' %}active{% endif %}">
+            <i class="bi bi-shield-exclamation"></i>
+            <span>Fraud Detection</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ url_for('performance') }}" class="nav-link-custom {% if active_page == 'performance' %}active{% endif %}">
+            <i class="bi bi-graph-up-arrow"></i>
+            <span>Model Performance</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-heading">Logs & Documentation</div>
+      <ul class="sidebar-nav">
+        <li class="nav-item">
+          <a href="{{ url_for('history') }}" class="nav-link-custom {% if active_page == 'history' %}active{% endif %}">
+            <i class="bi bi-clock-history"></i>
+            <span>Prediction History</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ url_for('about') }}" class="nav-link-custom {% if active_page == 'about' %}active{% endif %}">
+            <i class="bi bi-info-circle"></i>
+            <span>About Project</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Sidebar Footer: Dataset Status -->
+    <div class="sidebar-footer">
+      <div class="dataset-status-box" id="sidebar-dataset-box">
+        <div class="dataset-status-header">
+          <span class="dataset-status-label">Dataset Status</span>
+          <span class="status-dot dot-red" id="sidebar-status-dot"></span>
+        </div>
+        <div class="dataset-status-text" id="sidebar-status-text">
+          <span class="text-secondary-custom">Checking...</span>
+        </div>
+        <div class="text-xs text-muted-custom mt-1" id="sidebar-dataset-meta">
+          creditcard.csv
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Wrapper -->
+  <div class="main-content">
+    <!-- Top Navbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-sidebar-toggle" id="sidebar-toggle" aria-label="Toggle navigation">
+          <i class="bi bi-list"></i>
+        </button>
+        <div class="topbar-title-wrap">
+          <h1 class="topbar-page-title">{% block page_title %}Overview Dashboard{% endblock %}</h1>
+          <div class="topbar-breadcrumb">
+            {% block breadcrumb %}
+            <span>FraudGuard</span> / <span class="text-accent-blue">Dashboard</span>
+            {% endblock %}
+          </div>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <div class="d-none d-md-flex align-items-center gap-2 px-3 py-1 bg-elevated-custom border-custom rounded-pill">
+          <span class="status-dot dot-green"></span>
+          <span class="text-xs text-secondary-custom">System Active</span>
+        </div>
+        <a href="https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud" target="_blank" rel="noopener noreferrer" class="btn-custom btn-outline-custom text-xs py-1 px-3 d-none d-sm-inline-flex">
+          <i class="bi bi-database"></i>
+          <span>Kaggle Source</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Page Body Content -->
+    <main class="container-fluid py-4 px-lg-4 flex-grow-1">
+      {% block content %}{% endblock %}
+    </main>
+
+    <!-- App Footer -->
+    <footer class="py-3 px-4 border-top border-custom text-center text-xs text-secondary-custom bg-surface-custom">
+      <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+        <div>FraudGuard AI &copy; 2026 - BCA AI & Data Science Capstone Project</div>
+        <div>
+          <span class="text-muted-custom">Engine:</span> Python &bull; Flask &bull; Scikit-Learn &bull; Chart.js
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Bootstrap 5.3 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Core App Utility JS -->
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+  <!-- Page-Specific Script Block -->
+  {% block page_js %}{% endblock %}
+</body>
+</html>

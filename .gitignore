@@ -1,0 +1,31 @@
+# Python bytecode
+*.pyc
+__pycache__/
+
+# Database
+*.db
+
+# Serialized models and artifacts
+*.pkl
+models/*.pkl
+models/*.json
+!models/.gitkeep
+
+# Datasets
+data/raw/*.csv
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Environment & Virtual environments
+.env
+venv/
+.venv/
+env/
+
+# Screenshots
+screenshots/*
+!screenshots/.gitkeep
+
+# Notebook checkpoints
+.ipynb_checkpoints/

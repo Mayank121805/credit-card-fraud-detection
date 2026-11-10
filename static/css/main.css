@@ -1,0 +1,383 @@
+/* ==========================================================================
+   FraudGuard AI - Main Design System & Global Styles
+   ========================================================================== */
+
+/* 1. Design Tokens & Variables */
+:root {
+  --bg-primary:      #0d1117;   /* deep navy background */
+  --bg-surface:      #161b22;   /* card/sidebar background */
+  --bg-elevated:     #21262d;   /* elevated elements, inputs */
+  --border-color:    #30363d;   /* borders */
+  --border-subtle:   rgba(48, 54, 61, 0.6);
+  --accent-blue:     #58a6ff;   /* primary accent, links, highlights */
+  --accent-cyan:     #39d5ff;   /* secondary accent */
+  --accent-green:    #3fb950;   /* legit/success */
+  --accent-red:      #f85149;   /* fraud/danger */
+  --accent-orange:   #e3b341;   /* warning/medium risk */
+  --accent-purple:   #bc8cff;   /* model 2 / charts */
+  --text-primary:    #e6edf3;   /* main text */
+  --text-secondary:  #8b949e;   /* muted text */
+  --text-muted:      #484f58;   /* very muted */
+
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  
+  /* Shadows & Glows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.55);
+  --glow-blue: 0 0 16px rgba(88, 166, 255, 0.25);
+  --glow-red: 0 0 16px rgba(248, 81, 73, 0.25);
+  --glow-green: 0 0 16px rgba(63, 185, 80, 0.25);
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-pill: 50rem;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 2. Reset & Base Styles */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* 3. Global Typography */
+h1, .h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+h2, .h2 {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+h3, .h3 {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+h4, .h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.35rem;
+}
+
+h5, .h5 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+p {
+  margin-bottom: 0.75rem;
+  color: var(--text-secondary);
+}
+
+small, .text-small {
+  font-size: 12px;
+}
+
+.text-xs {
+  font-size: 11px;
+}
+
+a {
+  color: var(--accent-blue);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--accent-cyan);
+}
+
+/* 4. Utility Classes */
+.text-primary-custom { color: var(--text-primary) !important; }
+.text-secondary-custom { color: var(--text-secondary) !important; }
+.text-muted-custom { color: var(--text-muted) !important; }
+
+.text-accent-blue { color: var(--accent-blue) !important; }
+.text-accent-cyan { color: var(--accent-cyan) !important; }
+.text-accent-green { color: var(--accent-green) !important; }
+.text-accent-red { color: var(--accent-red) !important; }
+.text-accent-orange { color: var(--accent-orange) !important; }
+.text-accent-purple { color: var(--accent-purple) !important; }
+
+.bg-primary-custom { background-color: var(--bg-primary) !important; }
+.bg-surface-custom { background-color: var(--bg-surface) !important; }
+.bg-elevated-custom { background-color: var(--bg-elevated) !important; }
+
+.border-custom { border: 1px solid var(--border-color) !important; }
+.border-subtle-custom { border: 1px solid var(--border-subtle) !important; }
+
+/* 5. Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}
+
+/* 6. Loading Skeleton Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated) 25%,
+    rgba(48, 54, 61, 0.7) 50%,
+    var(--bg-elevated) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite ease-in-out;
+  border-radius: var(--radius-md);
+  display: inline-block;
+}
+
+.skeleton-text {
+  height: 14px;
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+.skeleton-title {
+  height: 24px;
+  width: 60%;
+  margin-bottom: 12px;
+}
+
+.skeleton-card {
+  height: 120px;
+  width: 100%;
+  border-radius: var(--radius-lg);
+}
+
+.skeleton-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+}
+
+/* 7. Alert & Notification Styles */
+.alert-custom {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--accent-blue);
+  color: var(--text-primary);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 1rem;
+}
+
+.alert-custom-info {
+  border-left-color: var(--accent-blue);
+  background-color: rgba(88, 166, 255, 0.08);
+}
+.alert-custom-info .alert-icon {
+  color: var(--accent-blue);
+}
+
+.alert-custom-success {
+  border-left-color: var(--accent-green);
+  background-color: rgba(63, 185, 80, 0.08);
+}
+.alert-custom-success .alert-icon {
+  color: var(--accent-green);
+}
+
+.alert-custom-warning {
+  border-left-color: var(--accent-orange);
+  background-color: rgba(227, 179, 65, 0.08);
+}
+.alert-custom-warning .alert-icon {
+  color: var(--accent-orange);
+}
+
+.alert-custom-danger {
+  border-left-color: var(--accent-red);
+  background-color: rgba(248, 81, 73, 0.08);
+}
+.alert-custom-danger .alert-icon {
+  color: var(--accent-red);
+}
+
+/* Toast Container */
+#toast-container {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast-item {
+  pointer-events: auto;
+  min-width: 320px;
+  max-width: 420px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 8. Badge Styles */
+.badge-custom {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.02em;
+}
+
+/* Risk Badges */
+.badge-risk-low {
+  background: rgba(63, 185, 80, 0.15);
+  color: var(--accent-green);
+  border: 1px solid rgba(63, 185, 80, 0.35);
+}
+
+.badge-risk-medium, .badge-risk-med {
+  background: rgba(227, 179, 65, 0.15);
+  color: var(--accent-orange);
+  border: 1px solid rgba(227, 179, 65, 0.35);
+}
+
+.badge-risk-high {
+  background: rgba(248, 81, 73, 0.15);
+  color: var(--accent-red);
+  border: 1px solid rgba(248, 81, 73, 0.35);
+}
+
+/* Prediction Label Badges */
+.badge-legit, .badge-legitimate {
+  background: rgba(63, 185, 80, 0.15);
+  color: var(--accent-green);
+  border: 1px solid rgba(63, 185, 80, 0.35);
+}
+
+.badge-fraud, .badge-fraudulent {
+  background: rgba(248, 81, 73, 0.15);
+  color: var(--accent-red);
+  border: 1px solid rgba(248, 81, 73, 0.35);
+}
+
+.badge-source {
+  background: var(--bg-elevated);
+  color: var(--accent-blue);
+  border: 1px solid var(--border-color);
+}
+
+/* 9. Card Baseline */
+.app-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 20px;
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.app-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.app-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  h1, .h1 { font-size: 24px; }
+  h2, .h2 { font-size: 20px; }
+  .alert-custom { padding: 12px; }
+}

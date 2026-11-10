@@ -1,0 +1,334 @@
+/* ==========================================================================
+   FraudGuard AI - Dashboard & Chart Styles
+   ========================================================================== */
+
+/* 1. KPI Cards */
+.kpi-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-top: 3px solid var(--accent-blue);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal), border-color var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 125px;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(88, 166, 255, 0.4);
+}
+
+.kpi-card.kpi-blue { border-top-color: var(--accent-blue); }
+.kpi-card.kpi-red { border-top-color: var(--accent-red); }
+.kpi-card.kpi-green { border-top-color: var(--accent-green); }
+.kpi-card.kpi-orange { border-top-color: var(--accent-orange); }
+.kpi-card.kpi-cyan { border-top-color: var(--accent-cyan); }
+.kpi-card.kpi-purple { border-top-color: var(--accent-purple); }
+
+.kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.kpi-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.kpi-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.kpi-blue .kpi-icon-wrap { background: rgba(88, 166, 255, 0.12); color: var(--accent-blue); }
+.kpi-red .kpi-icon-wrap { background: rgba(248, 81, 73, 0.12); color: var(--accent-red); }
+.kpi-green .kpi-icon-wrap { background: rgba(63, 185, 80, 0.12); color: var(--accent-green); }
+.kpi-orange .kpi-icon-wrap { background: rgba(227, 179, 65, 0.12); color: var(--accent-orange); }
+.kpi-cyan .kpi-icon-wrap { background: rgba(57, 213, 255, 0.12); color: var(--accent-cyan); }
+.kpi-purple .kpi-icon-wrap { background: rgba(188, 140, 255, 0.12); color: var(--accent-purple); }
+
+.kpi-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin: 4px 0 2px 0;
+  font-feature-settings: "tnum";
+}
+
+.kpi-footer {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+/* 2. Chart Containers */
+.chart-container {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chart-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.chart-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 280px;
+  width: 100%;
+}
+
+.chart-canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* 3. Trend Indicators */
+.trend-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.trend-up {
+  color: var(--accent-red);
+  background: rgba(248, 81, 73, 0.1);
+}
+
+.trend-down {
+  color: var(--accent-green);
+  background: rgba(63, 185, 80, 0.1);
+}
+
+.trend-neutral {
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+}
+
+/* 4. Stat Comparison Boxes */
+.stat-comparison-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.stat-box {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  transition: border-color var(--transition-fast);
+}
+
+.stat-box:hover {
+  border-color: var(--accent-blue);
+}
+
+.stat-box-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.stat-box-val {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* 5. Progress Bar for Training & Upload */
+.custom-progress-container {
+  background-color: var(--bg-elevated);
+  border-radius: var(--radius-pill);
+  height: 10px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--border-subtle);
+  margin: 10px 0;
+}
+
+.custom-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+  border-radius: var(--radius-pill);
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.custom-progress-bar.animated-stripes {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.15) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.15) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 1rem 1rem;
+  animation: progress-stripes 1s linear infinite;
+}
+
+@keyframes progress-stripes {
+  0% { background-position: 1rem 0; }
+  100% { background-position: 0 0; }
+}
+
+/* 6. Dataset Upload Area */
+.upload-dropzone {
+  background-color: var(--bg-surface);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 36px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  position: relative;
+}
+
+.upload-dropzone:hover, .upload-dropzone.drag-active {
+  border-color: var(--accent-blue);
+  background-color: rgba(88, 166, 255, 0.04);
+  box-shadow: var(--glow-blue);
+}
+
+.upload-icon-wrapper {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px auto;
+  border-radius: 50%;
+  background: rgba(88, 166, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-blue);
+  font-size: 28px;
+  transition: transform var(--transition-normal);
+}
+
+.upload-dropzone:hover .upload-icon-wrapper {
+  transform: scale(1.08);
+}
+
+/* 7. Gauge / Probability Meter */
+.prob-meter-wrapper {
+  position: relative;
+  padding: 16px 0;
+}
+
+.prob-meter-track {
+  height: 14px;
+  background-color: var(--bg-elevated);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  position: relative;
+}
+
+.prob-meter-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: var(--radius-pill);
+  transition: width 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.4s ease;
+}
+
+.prob-meter-fill.fill-green {
+  background: linear-gradient(90deg, #3fb950, #2ea043);
+  box-shadow: 0 0 10px rgba(63, 185, 80, 0.4);
+}
+
+.prob-meter-fill.fill-orange {
+  background: linear-gradient(90deg, #e3b341, #d29922);
+  box-shadow: 0 0 10px rgba(227, 179, 65, 0.4);
+}
+
+.prob-meter-fill.fill-red {
+  background: linear-gradient(90deg, #f85149, #da3633);
+  box-shadow: 0 0 12px rgba(248, 81, 73, 0.5);
+}
+
+.prob-meter-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* 8. Callout & CTA Cards */
+.cta-banner {
+  background: linear-gradient(135deg, rgba(88, 166, 255, 0.12) 0%, rgba(57, 213, 255, 0.05) 100%);
+  border: 1px solid rgba(88, 166, 255, 0.35);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}

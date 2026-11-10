@@ -1,0 +1,415 @@
+{% extends "base.html" %}
+
+{% set active_page = "about" %}
+
+{% block title %}About Project - FraudGuard AI{% endblock %}
+{% block page_title %}About Project & Architecture{% endblock %}
+{% block breadcrumb %}
+  <span>FraudGuard</span> / <span class="text-accent-blue">About</span>
+{% endblock %}
+
+{% block content %}
+<div class="about-page">
+
+  <!-- 1. Project Header Card -->
+  <div class="app-card mb-4 p-4 border-subtle-custom position-relative overflow-hidden">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-8">
+        <div class="d-flex flex-wrap gap-2 mb-2">
+          <span class="badge-custom" style="background: rgba(88, 166, 255, 0.15); color: var(--accent-blue);">
+            <i class="bi bi-mortarboard-fill"></i> BCA AI &amp; Data Science Final Year Project
+          </span>
+          <span class="badge-custom" style="background: rgba(63, 185, 80, 0.15); color: var(--accent-green);">
+            <i class="bi bi-shield-check"></i> Production-Ready Architecture
+          </span>
+          <span class="badge-custom badge-source">v2.4.0</span>
+        </div>
+        <h1 class="h2 text-primary-custom mb-2">FraudGuard AI &bull; Intelligent Transaction Security</h1>
+        <p class="text-secondary-custom mb-3" style="max-width: 720px; font-size: 13.5px;">
+          An end-to-end, high-performance financial crime detection platform. Combines advanced exploratory data analysis, real-time machine learning inference, and comprehensive model benchmarking to safeguard digital payment ecosystems against fraudulent transactions.
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+          <span class="badge-custom badge-source"><i class="bi bi-filetype-py"></i> Python 3.10+</span>
+          <span class="badge-custom badge-source"><i class="bi bi-braces"></i> Flask REST API</span>
+          <span class="badge-custom badge-source"><i class="bi bi-cpu"></i> Scikit-Learn</span>
+          <span class="badge-custom badge-source"><i class="bi bi-database"></i> SQLite3</span>
+          <span class="badge-custom badge-source"><i class="bi bi-pie-chart"></i> Chart.js 4.4</span>
+          <span class="badge-custom badge-source"><i class="bi bi-bootstrap"></i> Bootstrap 5.3</span>
+        </div>
+      </div>
+      <div class="col-lg-4 text-center d-none d-lg-block">
+        <div style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, rgba(88, 166, 255, 0.2), rgba(188, 140, 255, 0.2)); display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 1px solid var(--border-color);">
+          <i class="bi bi-shield-lock-fill text-accent-blue" style="font-size: 54px;"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Problem Statement Card -->
+  <div class="app-card mb-4">
+    <div class="app-card-header">
+      <h3 class="app-card-title">
+        <i class="bi bi-exclamation-triangle-fill text-accent-red"></i>
+        The Fraud Detection Dilemma
+      </h3>
+      <span class="badge-custom badge-risk-high">Extreme Skewness</span>
+    </div>
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <p class="text-secondary-custom text-xs" style="line-height: 1.7;">
+          Credit card fraud represents billions of dollars in global annual losses. However, developing automated detection algorithms presents unique computational hurdles:
+        </p>
+        <ul class="text-secondary-custom text-xs ps-3 mb-0" style="line-height: 1.8;">
+          <li><strong>Extreme Class Imbalance:</strong> In typical banking portfolios, less than 0.2% of transactions are fraudulent (here, 492 out of 284,807 transactions &mdash; only 0.172%).</li>
+          <li><strong>Asymmetric Misclassification Costs:</strong> Missing a fraudulent charge (False Negative) causes direct financial write-offs and penalties. Conversely, blocking an authentic customer (False Positive) damages trust and customer retention.</li>
+          <li><strong>Concept Drift &amp; Camouflage:</strong> Fraudsters continually alter spending locations, amounts, and transaction timing to simulate legitimate cardholders.</li>
+        </ul>
+      </div>
+      <div class="col-lg-5">
+        <div class="p-3 bg-elevated-custom rounded border-custom h-100 d-flex flex-column justify-content-between">
+          <div class="text-xs fw-semibold text-primary-custom mb-2">Key Problem Metrics:</div>
+          <div class="d-flex justify-content-between text-xs py-1 border-bottom border-subtle-custom">
+            <span class="text-secondary-custom">Total Transactions Analyzed:</span>
+            <span class="text-primary-custom fw-bold">284,807</span>
+          </div>
+          <div class="d-flex justify-content-between text-xs py-1 border-bottom border-subtle-custom">
+            <span class="text-secondary-custom">Confirmed Fraud Incidents:</span>
+            <span class="text-accent-red fw-bold">492 (0.172%)</span>
+          </div>
+          <div class="d-flex justify-content-between text-xs py-1 border-bottom border-subtle-custom">
+            <span class="text-secondary-custom">Legitimate Transactions:</span>
+            <span class="text-accent-green fw-bold">284,315 (99.828%)</span>
+          </div>
+          <div class="d-flex justify-content-between text-xs py-1">
+            <span class="text-secondary-custom">Observed Max Fraud:</span>
+            <span class="text-accent-red fw-bold">$2,125.87</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Tech Stack Grid (2 Columns) -->
+  <div class="app-card mb-4">
+    <div class="app-card-header">
+      <h3 class="app-card-title">
+        <i class="bi bi-stack text-accent-cyan"></i>
+        System Architecture &amp; Technology Stack
+      </h3>
+      <span class="text-xs text-secondary-custom">Full-stack modular components</span>
+    </div>
+
+    <div class="row g-3">
+      <!-- Flask -->
+      <div class="col-md-6">
+        <div class="stat-box p-3 h-100">
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <div class="kpi-icon-wrap" style="background: rgba(88, 166, 255, 0.1); color: var(--accent-blue); width: 36px; height: 36px;">
+              <i class="bi bi-server"></i>
+            </div>
+            <div>
+              <div class="fw-bold text-primary-custom">Flask Web Framework</div>
+              <div class="text-xs text-muted-custom">Backend REST API &amp; Server-Side Routing</div>
+            </div>
+          </div>
+          <p class="text-secondary-custom text-xs mb-0">
+            Provides clean JSON endpoints for distribution analytics, asynchronous model training dispatch, real-time prediction handlers, and Jinja2 template rendering.
+          </p>
+        </div>
+      </div>
+
+      <!-- Scikit-learn -->
+      <div class="col-md-6">
+        <div class="stat-box p-3 h-100">
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <div class="kpi-icon-wrap" style="background: rgba(188, 140, 255, 0.1); color: var(--accent-purple); width: 36px; height: 36px;">
+              <i class="bi bi-cpu-fill"></i>
+            </div>
+            <div>
+              <div class="fw-bold text-primary-custom">Scikit-Learn</div>
+              <div class="text-xs text-muted-custom">Machine Learning &amp; Metrics Engine</div>
+            </div>
+          </div>
+          <p class="text-secondary-custom text-xs mb-0">
+            Powers Logistic Regression and Random Forest ensembles, robust feature scaling, stratified k-fold splits, ROC and Precision-Recall curve generation.
+          </p>
+        </div>
+      </div>
+
+      <!-- Pandas & NumPy -->
+      <div class="col-md-6">
+        <div class="stat-box p-3 h-100">
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <div class="kpi-icon-wrap" style="background: rgba(57, 213, 255, 0.1); color: var(--accent-cyan); width: 36px; height: 36px;">
+              <i class="bi bi-table"></i>
+            </div>
+            <div>
+              <div class="fw-bold text-primary-custom">Pandas &amp; NumPy</div>
+              <div class="text-xs text-muted-custom">Data Wrangling &amp; Statistical Aggregation</div>
+            </div>
+          </div>
+          <p class="text-secondary-custom text-xs mb-0">
+            Performs vector math, percentile computation (IQR, median), correlation matrix extraction, hourly time-series binning, and chunked CSV streaming.
+          </p>
+        </div>
+      </div>
+
+      <!-- SQLite -->
+      <div class="col-md-6">
+        <div class="stat-box p-3 h-100">
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <div class="kpi-icon-wrap" style="background: rgba(63, 185, 80, 0.1); color: var(--accent-green); width: 36px; height: 36px;">
+              <i class="bi bi-database-fill"></i>
+            </div>
+            <div>
+              <div class="fw-bold text-primary-custom">SQLite3 Database</div>
+              <div class="text-xs text-muted-custom">Audit Trail &amp; Prediction Storage</div>
+            </div>
+          </div>
+          <p class="text-secondary-custom text-xs mb-0">
+            Persists historical prediction records with timestamp indexing, confidence intervals, risk level labels, and model origin for regulatory compliance.
+          </p>
+        </div>
+      </div>
+
+      <!-- Chart.js -->
+      <div class="col-md-6">
+        <div class="stat-box p-3 h-100">
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <div class="kpi-icon-wrap" style="background: rgba(227, 179, 65, 0.1); color: var(--accent-orange); width: 36px; height: 36px;">
+              <i class="bi bi-pie-chart-fill"></i>
+            </div>
+            <div>
+              <div class="fw-bold text-primary-custom">Chart.js 4.4</div>
+              <div class="text-xs text-muted-custom">Responsive Dark Visualizations</div>
+            </div>
+          </div>
+          <p class="text-secondary-custom text-xs mb-0">
+            Renders interactive hardware-accelerated HTML5 canvas charts: ROC curves, PR curves, time series, amount distribution brackets, and feature rankings.
+          </p>
+        </div>
+      </div>
+
+      <!-- Bootstrap & Vanilla CSS -->
+      <div class="col-md-6">
+        <div class="stat-box p-3 h-100">
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <div class="kpi-icon-wrap" style="background: rgba(248, 81, 73, 0.1); color: var(--accent-red); width: 36px; height: 36px;">
+              <i class="bi bi-palette-fill"></i>
+            </div>
+            <div>
+              <div class="fw-bold text-primary-custom">Bootstrap 5.3 &amp; Custom CSS</div>
+              <div class="text-xs text-muted-custom">Dark Fintech Design System</div>
+            </div>
+          </div>
+          <p class="text-secondary-custom text-xs mb-0">
+            Tailored CSS custom properties, glassmorphism topbar, responsive sidebar drawer, shimmer skeleton placeholders, and high-contrast accessibility colors.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. ML Methodology Pipeline (Steps 1-7) -->
+  <div class="app-card mb-4">
+    <div class="app-card-header">
+      <h3 class="app-card-title">
+        <i class="bi bi-diagram-3-fill text-accent-purple"></i>
+        End-to-End Machine Learning Pipeline
+      </h3>
+      <span class="badge-custom badge-source">Workflow Stages 1 &ndash; 7</span>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-6 col-lg-3">
+        <div class="stat-box h-100 p-3">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="badge-custom badge-source">01</span>
+            <div class="fw-bold text-primary-custom text-xs">Data Ingestion</div>
+          </div>
+          <p class="text-secondary-custom text-xs mb-0">
+            Streaming CSV upload and memory-efficient loading of 284,807 transaction records with integrity verification.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="stat-box h-100 p-3">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="badge-custom badge-source">02</span>
+            <div class="fw-bold text-primary-custom text-xs">Exploratory Analysis</div>
+          </div>
+          <p class="text-secondary-custom text-xs mb-0">
+            Statistical distribution calculation, IQR outlier tracking, and Pearson correlation matrix extraction across features.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="stat-box h-100 p-3">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="badge-custom badge-source">03</span>
+            <div class="fw-bold text-primary-custom text-xs">Feature Preprocessing</div>
+          </div>
+          <p class="text-secondary-custom text-xs mb-0">
+            Application of RobustScaler on Amount and Time features to resist long-tailed financial outliers.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="stat-box h-100 p-3">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="badge-custom badge-source">04</span>
+            <div class="fw-bold text-primary-custom text-xs">Imbalance Strategy</div>
+          </div>
+          <p class="text-secondary-custom text-xs mb-0">
+            Stratified train/test splitting (80/20) and class-weighted cost functions to penalize missed fraud occurrences.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="stat-box h-100 p-3">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="badge-custom badge-source">05</span>
+            <div class="fw-bold text-primary-custom text-xs">Model Training &amp; Ensembling</div>
+          </div>
+          <p class="text-secondary-custom text-xs mb-0">
+            Fitting Logistic Regression (L2 penalty) baseline and 100-tree Random Forest with parallelized estimator jobs.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="stat-box h-100 p-3">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="badge-custom badge-source">06</span>
+            <div class="fw-bold text-primary-custom text-xs">Evaluation &amp; Benchmarking</div>
+          </div>
+          <p class="text-secondary-custom text-xs mb-0">
+            Threshold analysis, ROC-AUC, PR-AUC, confusion matrix derivation, and Gini feature importance ranking.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-12 col-lg-4">
+        <div class="stat-box h-100 p-3">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="badge-custom badge-risk-low">07</span>
+            <div class="fw-bold text-accent-green text-xs">Inference &amp; Auditing</div>
+          </div>
+          <p class="text-secondary-custom text-xs mb-0">
+            Sub-millisecond single and batch prediction scoring with probability calibration and SQLite audit persistence.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Dataset Info Card -->
+  <div class="app-card mb-4">
+    <div class="app-card-header">
+      <h3 class="app-card-title">
+        <i class="bi bi-file-earmark-bar-graph text-accent-orange"></i>
+        Kaggle ULB Dataset Specifications
+      </h3>
+      <a href="https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud" target="_blank" rel="noopener noreferrer" class="btn-custom btn-outline-custom text-xs">
+        <i class="bi bi-box-arrow-up-right"></i> Kaggle Repository
+      </a>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <p class="text-secondary-custom text-xs mb-2">
+          The dataset contains transactions made by credit cards in September 2013 by European cardholders. It presents transactions that occurred in two days, with 492 frauds out of 284,807 transactions.
+        </p>
+        <ul class="text-secondary-custom text-xs ps-3 mb-0" style="line-height: 1.8;">
+          <li><strong>V1 &ndash; V28:</strong> The result of a Principal Component Analysis (PCA) transformation applied to protect user confidentiality and proprietary background information.</li>
+          <li><strong>Time:</strong> Contains the seconds elapsed between each transaction and the first transaction in the dataset.</li>
+          <li><strong>Amount:</strong> Transaction Amount in USD, which can be utilized for example-dependent cost-sensitive learning.</li>
+          <li><strong>Class:</strong> Response target variable (1 for Fraud, 0 for Legitimate).</li>
+        </ul>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="p-3 bg-elevated-custom rounded border-custom">
+          <div class="text-xs fw-semibold text-primary-custom mb-2">Class Distribution Breakdown</div>
+          <div class="d-flex justify-content-between text-xs mb-1">
+            <span class="text-accent-green">Class 0 (Legitimate): 284,315</span>
+            <span class="text-accent-red">Class 1 (Fraud): 492</span>
+          </div>
+          <div class="position-relative" style="height: 14px; background: var(--bg-surface); border-radius: var(--radius-pill); overflow: hidden; border: 1px solid var(--border-color); display: flex;">
+            <div style="width: 99.828%; background: var(--accent-green);"></div>
+            <div style="width: 0.172%; min-width: 6px; background: var(--accent-red); box-shadow: 0 0 6px var(--accent-red);"></div>
+          </div>
+          <div class="d-flex justify-content-between text-xs text-muted-custom mt-1">
+            <span>99.828% Normal</span>
+            <span>0.172% Fraudulent</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Limitations & Future Improvements (2 Columns) -->
+  <div class="row g-3 mb-4">
+    <!-- Limitations -->
+    <div class="col-lg-6">
+      <div class="app-card h-100">
+        <div class="app-card-header">
+          <h3 class="app-card-title">
+            <i class="bi bi-shield-slash text-accent-red"></i>
+            Current Project Limitations
+          </h3>
+        </div>
+        <ul class="text-secondary-custom text-xs ps-3 mb-0" style="line-height: 1.8;">
+          <li><strong>Anonymized PCA Vectors:</strong> Original semantic features (merchant category codes, geolocation, device fingerprints) are masked by PCA, restricting domain-specific feature engineering.</li>
+          <li><strong>Temporal Horizon:</strong> Dataset spans exactly 48 hours; seasonal purchase behaviors, weekly pay-cycle fluctuations, and holiday patterns cannot be modeled.</li>
+          <li><strong>Fixed Decision Boundary:</strong> Standard 0.50 probability cutoff may need adaptive dynamic thresholds based on daily transaction dollar volume.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Future Improvements -->
+    <div class="col-lg-6">
+      <div class="app-card h-100">
+        <div class="app-card-header">
+          <h3 class="app-card-title">
+            <i class="bi bi-rocket-takeoff text-accent-blue"></i>
+            Future Enhancements Roadmap
+          </h3>
+        </div>
+        <ul class="text-secondary-custom text-xs ps-3 mb-0" style="line-height: 1.8;">
+          <li><strong>Advanced Gradient Boosting:</strong> Integrate XGBoost, LightGBM, and CatBoost algorithms with hyperparameter optimization via Optuna.</li>
+          <li><strong>Deep Autoencoders:</strong> Implement semi-supervised Reconstruction Error anomaly detection trained exclusively on normal transactions.</li>
+          <li><strong>Streaming Event Pipeline:</strong> Connect Apache Kafka or RabbitMQ consumers for real-time sub-10ms transaction scoring in high-throughput environments.</li>
+          <li><strong>Explainable AI (XAI):</strong> Incorporate SHAP (SHapley Additive exPlanations) waterfall plots for individual prediction interpretability.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. Repository & Academic Card -->
+  <div class="app-card text-center p-4">
+    <div class="d-flex flex-column align-items-center justify-content-center">
+      <div class="kpi-icon-wrap mb-2" style="background: rgba(88, 166, 255, 0.15); color: var(--accent-blue); width: 48px; height: 48px;">
+        <i class="bi bi-github fs-4"></i>
+      </div>
+      <h4 class="h5 text-primary-custom mb-1">Open Source &bull; MIT License</h4>
+      <p class="text-xs text-secondary-custom mb-3" style="max-width: 500px;">
+        Designed and engineered for educational, academic, and portfolio demonstration purposes as part of the Bachelor of Computer Applications (BCA) program.
+      </p>
+      <div class="d-flex gap-2">
+        <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="btn-custom btn-outline-custom text-xs">
+          <i class="bi bi-code-slash"></i> View Repository
+        </a>
+        <a href="{{ url_for('index') }}" class="btn-custom btn-primary-custom text-xs">
+          <i class="bi bi-speedometer2"></i> Return to Dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
