@@ -11,7 +11,6 @@ history_bp = Blueprint('history', __name__)
 
 
 @history_bp.route('/api/history', methods=['GET'])
-@history_bp.route('/history', methods=['GET'])
 def get_prediction_history():
     """
     Return paginated list of prediction history records with advanced filtering and sorting.
