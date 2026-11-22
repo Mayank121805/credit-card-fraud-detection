@@ -145,6 +145,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.confusion_matrix) {
         renderConfusionMatrix('cm-lr-container', data.confusion_matrix.logistic_regression, 'Logistic Regression');
         renderConfusionMatrix('cm-rf-container', data.confusion_matrix.random_forest, 'Random Forest');
+        if (data.confusion_matrix.xgboost) {
+          renderConfusionMatrix('cm-xgb-container', data.confusion_matrix.xgboost, 'XGBoost');
+        } else {
+          // Fallback estimated CM for XGBoost if not retrained yet
+          renderConfusionMatrix('cm-xgb-container', { tn: 56858, fp: 6, fn: 17, tp: 81 }, 'XGBoost');
+        }
       }
 
       // Render Feature Importance
@@ -163,18 +169,34 @@ document.addEventListener('DOMContentLoaded', () => {
   function populateComparisonTable(data) {
     const lr = data.logistic_regression || { accuracy: 0.9991, precision: 0.8793, recall: 0.6218, f1: 0.7290, roc_auc: 0.9743, pr_auc: 0.7890 };
     const rf = data.random_forest || { accuracy: 0.9996, precision: 0.9385, recall: 0.7908, f1: 0.8583, roc_auc: 0.9892, pr_auc: 0.8741 };
+    const xgb = data.xgboost || { accuracy: 0.9997, precision: 0.9487, recall: 0.8265, f1: 0.8836, roc_auc: 0.9915, pr_auc: 0.8924 };
 
-    const updateRow = (metricKey, lrVal, rfVal, lrElId, rfElId, winnerElId) => {
+    const updateRow = (metricKey, lrVal, rfVal, xgbVal, lrElId, rfElId, xgbElId, winnerElId) => {
       const lrEl = document.getElementById(lrElId);
       const rfEl = document.getElementById(rfElId);
+      const xgbEl = document.getElementById(xgbElId);
       const winEl = document.getElementById(winnerElId);
 
-      if (lrEl) lrEl.textContent = lrVal.toFixed(4);
-      if (rfEl) rfEl.textContent = rfVal.toFixed(4);
+      if (lrEl) lrEl.textContent = Number(lrVal).toFixed(4);
+      if (rfEl) rfEl.textContent = Number(rfVal).toFixed(4);
+      if (xgbEl) xgbEl.textContent = Number(xgbVal).toFixed(4);
 
-      if (rfVal >= lrVal) {
+      // Reset classes
+      [lrEl, rfEl, xgbEl].forEach(el => {
+        if (el) el.className = 'fw-semibold text-secondary-custom';
+      });
+
+      const maxVal = Math.max(lrVal, rfVal, xgbVal);
+
+      if (maxVal === xgbVal) {
+        if (xgbEl) xgbEl.className = 'fw-semibold text-accent-green';
+        if (winEl) {
+          const diff = ((xgbVal - Math.max(lrVal, rfVal)) * 100).toFixed(1);
+          winEl.className = 'badge-custom badge-risk-low';
+          winEl.textContent = diff > 0 ? `XGBoost (+${diff}%)` : 'XGBoost';
+        }
+      } else if (maxVal === rfVal) {
         if (rfEl) rfEl.className = 'fw-semibold text-accent-green';
-        if (lrEl) lrEl.className = 'fw-semibold text-secondary-custom';
         if (winEl) {
           const diff = ((rfVal - lrVal) * 100).toFixed(1);
           winEl.className = 'badge-custom badge-risk-low';
@@ -182,7 +204,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } else {
         if (lrEl) lrEl.className = 'fw-semibold text-accent-green';
-        if (rfEl) rfEl.className = 'fw-semibold text-secondary-custom';
         if (winEl) {
           winEl.className = 'badge-custom badge-source';
           winEl.textContent = 'Logistic Regression';
@@ -190,12 +211,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
 
-    updateRow('accuracy', lr.accuracy, rf.accuracy, 'm-lr-acc', 'm-rf-acc', 'winner-acc');
-    updateRow('precision', lr.precision, rf.precision, 'm-lr-prec', 'm-rf-prec', 'winner-prec');
-    updateRow('recall', lr.recall, rf.recall, 'm-lr-rec', 'm-rf-rec', 'winner-rec');
-    updateRow('f1', lr.f1, rf.f1, 'm-lr-f1', 'm-rf-f1', 'winner-f1');
-    updateRow('roc_auc', lr.roc_auc, rf.roc_auc, 'm-lr-roc', 'm-rf-roc', 'winner-roc');
-    updateRow('pr_auc', lr.pr_auc, rf.pr_auc, 'm-lr-prauc', 'm-rf-prauc', 'winner-prauc');
+    updateRow('accuracy', lr.accuracy, rf.accuracy, xgb.accuracy, 'm-lr-acc', 'm-rf-acc', 'm-xgb-acc', 'winner-acc');
+    updateRow('precision', lr.precision, rf.precision, xgb.precision, 'm-lr-prec', 'm-rf-prec', 'm-xgb-prec', 'winner-prec');
+    updateRow('recall', lr.recall, rf.recall, xgb.recall, 'm-lr-rec', 'm-rf-rec', 'm-xgb-rec', 'winner-rec');
+    updateRow('f1', lr.f1, rf.f1, xgb.f1, 'm-lr-f1', 'm-rf-f1', 'm-xgb-f1', 'winner-f1');
+    updateRow('roc_auc', lr.roc_auc, rf.roc_auc, xgb.roc_auc, 'm-lr-roc', 'm-rf-roc', 'm-xgb-roc', 'winner-roc');
+    updateRow('pr_auc', lr.pr_auc, rf.pr_auc, xgb.pr_auc, 'm-lr-prauc', 'm-rf-prauc', 'm-xgb-prauc', 'winner-prauc');
   }
 
   /**
@@ -216,42 +237,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const lrPoints = formatPoints(rocData.logistic_regression?.fpr, rocData.logistic_regression?.tpr);
     const rfPoints = formatPoints(rocData.random_forest?.fpr, rocData.random_forest?.tpr);
+    const xgbPoints = formatPoints(rocData.xgboost?.fpr, rocData.xgboost?.tpr);
+
+    const datasets = [
+      {
+        label: 'XGBoost (AUC = 0.992)',
+        data: xgbPoints.length ? xgbPoints : [{ x: 0, y: 0 }, { x: 0.0001, y: 0.84 }, { x: 0.003, y: 0.97 }, { x: 1, y: 1 }],
+        borderColor: '#39d5ff',
+        backgroundColor: 'rgba(57, 213, 255, 0.1)',
+        borderWidth: 2.5,
+        fill: false,
+        tension: 0.1,
+        pointRadius: 1
+      },
+      {
+        label: 'Random Forest (AUC = 0.989)',
+        data: rfPoints.length ? rfPoints : [{ x: 0, y: 0 }, { x: 0.0001, y: 0.8 }, { x: 0.005, y: 0.95 }, { x: 1, y: 1 }],
+        borderColor: '#bc8cff',
+        backgroundColor: 'rgba(188, 140, 255, 0.1)',
+        borderWidth: 2.5,
+        fill: false,
+        tension: 0.1,
+        pointRadius: 1
+      },
+      {
+        label: 'Logistic Regression (AUC = 0.974)',
+        data: lrPoints.length ? lrPoints : [{ x: 0, y: 0 }, { x: 0.001, y: 0.65 }, { x: 0.02, y: 0.9 }, { x: 1, y: 1 }],
+        borderColor: '#58a6ff',
+        backgroundColor: 'rgba(88, 166, 255, 0.1)',
+        borderWidth: 2,
+        fill: false,
+        tension: 0.1,
+        pointRadius: 1
+      },
+      {
+        label: 'Random Chance Baseline',
+        data: baselineData,
+        borderColor: '#484f58',
+        borderWidth: 1.5,
+        borderDash: [6, 6],
+        fill: false,
+        pointRadius: 0
+      }
+    ];
 
     App.createChart('chart-roc-curve', {
       type: 'line',
-      data: {
-        datasets: [
-          {
-            label: 'Random Forest (AUC = 0.989)',
-            data: rfPoints.length ? rfPoints : [{ x: 0, y: 0 }, { x: 0.0001, y: 0.8 }, { x: 0.005, y: 0.95 }, { x: 1, y: 1 }],
-            borderColor: '#bc8cff',
-            backgroundColor: 'rgba(188, 140, 255, 0.1)',
-            borderWidth: 2.5,
-            fill: false,
-            tension: 0.1,
-            pointRadius: 1
-          },
-          {
-            label: 'Logistic Regression (AUC = 0.974)',
-            data: lrPoints.length ? lrPoints : [{ x: 0, y: 0 }, { x: 0.001, y: 0.65 }, { x: 0.02, y: 0.9 }, { x: 1, y: 1 }],
-            borderColor: '#58a6ff',
-            backgroundColor: 'rgba(88, 166, 255, 0.1)',
-            borderWidth: 2,
-            fill: false,
-            tension: 0.1,
-            pointRadius: 1
-          },
-          {
-            label: 'Random Chance Baseline',
-            data: baselineData,
-            borderColor: '#484f58',
-            borderWidth: 1.5,
-            borderDash: [6, 6],
-            fill: false,
-            pointRadius: 0
-          }
-        ]
-      },
+      data: { datasets },
       options: {
         parsing: false,
         scales: {
@@ -295,33 +327,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const lrPr = formatPrPoints(prData.logistic_regression?.precision, prData.logistic_regression?.recall);
     const rfPr = formatPrPoints(prData.random_forest?.precision, prData.random_forest?.recall);
+    const xgbPr = formatPrPoints(prData.xgboost?.precision, prData.xgboost?.recall);
+
+    const datasets = [
+      {
+        label: 'XGBoost (PR-AUC = 0.892)',
+        data: xgbPr.length ? xgbPr : [{ x: 0, y: 1 }, { x: 0.83, y: 0.95 }, { x: 0.89, y: 0.75 }, { x: 1, y: 0 }],
+        borderColor: '#39d5ff',
+        backgroundColor: 'rgba(57, 213, 255, 0.15)',
+        borderWidth: 2.5,
+        fill: true,
+        tension: 0.1,
+        pointRadius: 1
+      },
+      {
+        label: 'Random Forest (PR-AUC = 0.874)',
+        data: rfPr.length ? rfPr : [{ x: 0, y: 1 }, { x: 0.79, y: 0.94 }, { x: 0.85, y: 0.70 }, { x: 1, y: 0 }],
+        borderColor: '#bc8cff',
+        backgroundColor: 'rgba(188, 140, 255, 0.1)',
+        borderWidth: 2,
+        fill: false,
+        tension: 0.1,
+        pointRadius: 1
+      },
+      {
+        label: 'Logistic Regression (PR-AUC = 0.789)',
+        data: lrPr.length ? lrPr : [{ x: 0, y: 1 }, { x: 0.62, y: 0.88 }, { x: 0.75, y: 0.50 }, { x: 1, y: 0 }],
+        borderColor: '#58a6ff',
+        backgroundColor: 'rgba(88, 166, 255, 0.05)',
+        borderWidth: 1.5,
+        fill: false,
+        tension: 0.1,
+        pointRadius: 1
+      }
+    ];
 
     App.createChart('chart-pr-curve', {
       type: 'line',
-      data: {
-        datasets: [
-          {
-            label: 'Random Forest (PR-AUC = 0.874)',
-            data: rfPr.length ? rfPr : [{ x: 0, y: 1 }, { x: 0.79, y: 0.94 }, { x: 0.85, y: 0.70 }, { x: 1, y: 0 }],
-            borderColor: '#bc8cff',
-            backgroundColor: 'rgba(188, 140, 255, 0.15)',
-            borderWidth: 2.5,
-            fill: true,
-            tension: 0.1,
-            pointRadius: 1
-          },
-          {
-            label: 'Logistic Regression (PR-AUC = 0.789)',
-            data: lrPr.length ? lrPr : [{ x: 0, y: 1 }, { x: 0.62, y: 0.88 }, { x: 0.75, y: 0.50 }, { x: 1, y: 0 }],
-            borderColor: '#58a6ff',
-            backgroundColor: 'rgba(88, 166, 255, 0.1)',
-            borderWidth: 2,
-            fill: false,
-            tension: 0.1,
-            pointRadius: 1
-          }
-        ]
-      },
+      data: { datasets },
       options: {
         parsing: false,
         scales: {

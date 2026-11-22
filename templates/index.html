@@ -11,8 +11,8 @@
 {% block content %}
 <div class="dashboard-page">
 
-  <!-- 1. Dataset Upload Section (Visible when dataset is not loaded, collapsible once loaded) -->
-  <section id="upload-section" class="mb-4">
+  <!-- 1. Dataset Upload Section (collapsible; always re-openable via Change Dataset button) -->
+  <section id="upload-section" class="mb-4 d-none">
     <div class="app-card border-subtle-custom">
       <div class="row align-items-center g-4">
         <div class="col-lg-6">
@@ -81,6 +81,29 @@
       <a href="{{ url_for('performance') }}" class="btn-custom btn-primary-custom">
         <i class="bi bi-play-circle-fill"></i> Train ML Models
       </a>
+    </div>
+  </section>
+
+  <!-- 2b. Active Dataset Banner (shown when dataset IS loaded) -->
+  <section id="dataset-active-banner" class="mb-4 d-none">
+    <div class="app-card border-subtle-custom py-3 px-4">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+          <div class="kpi-icon-wrap" style="background: rgba(63,185,80,0.12); color: var(--accent-green); width:40px; height:40px;">
+            <i class="bi bi-database-fill-check fs-5"></i>
+          </div>
+          <div>
+            <div class="text-xs text-accent-green fw-semibold mb-1">
+              <i class="bi bi-check-circle-fill me-1"></i>Dataset Active
+            </div>
+            <div class="text-primary-custom fw-medium" id="active-dataset-name">creditcard.csv</div>
+            <div class="text-xs text-secondary-custom" id="active-dataset-meta">284,807 transactions loaded</div>
+          </div>
+        </div>
+        <button type="button" id="change-dataset-btn" class="btn-custom btn-outline-custom text-xs">
+          <i class="bi bi-arrow-repeat"></i> Change Dataset
+        </button>
+      </div>
     </div>
   </section>
 
@@ -202,40 +225,44 @@
     </div>
   </section>
 
-  <!-- 4. Charts Row 1: Distribution & Time Series -->
+  <!-- Fraud Rate Gauge & Class Distribution -->
   <section class="mb-4">
     <div class="row g-3">
-      <!-- Left: Class Distribution Doughnut -->
-      <div class="col-lg-5">
-        <div class="chart-container">
-          <div class="chart-header">
-            <div>
-              <h3 class="chart-title">
-                <i class="bi bi-pie-chart-fill text-accent-blue"></i>
-                Class Distribution Ratio
-              </h3>
-              <div class="chart-subtitle">Legitimate vs. Fraudulent proportions</div>
-            </div>
-            <span class="badge-custom badge-risk-low" id="dist-ratio-badge">99.8% / 0.2%</span>
+      <div class="col-lg-4 col-md-6">
+        <div class="app-card h-100">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="card-title-custom mb-0">Fraud Rate Gauge</h6>
+            <span class="badge-custom badge-risk-low" id="gauge-risk-label">Low Risk</span>
           </div>
-          <div class="chart-body d-flex align-items-center justify-content-center">
-            <canvas id="chart-distribution" class="chart-canvas"></canvas>
+          <div style="position:relative; height: 200px;">
+            <canvas id="chart-gauge"></canvas>
           </div>
-          <div class="row g-2 mt-3 pt-3 border-top border-subtle-custom text-center">
-            <div class="col-6">
-              <div class="text-xs text-secondary-custom">Legitimate Count</div>
-              <div class="fw-bold text-accent-green" id="dist-legit-count">-</div>
-            </div>
-            <div class="col-6">
-              <div class="text-xs text-secondary-custom">Fraudulent Count</div>
-              <div class="fw-bold text-accent-red" id="dist-fraud-count">-</div>
-            </div>
+          <div class="text-center mt-2">
+            <span class="text-xs text-secondary-custom">Dataset fraud rate vs industry avg (0.17%)</span>
           </div>
         </div>
       </div>
+      <div class="col-lg-8 col-md-6">
+        <div class="app-card h-100">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="card-title-custom mb-0">Class Distribution</h6>
+            <span class="badge-custom badge-risk-low" id="dist-ratio-badge">—</span>
+          </div>
+          <canvas id="chart-distribution" height="180"></canvas>
+          <div class="d-flex justify-content-around mt-3 text-xs">
+            <span><i class="bi bi-circle-fill text-accent-green me-1"></i>Legitimate: <strong id="dist-legit-count">—</strong></span>
+            <span><i class="bi bi-circle-fill text-accent-red me-1"></i>Fraudulent: <strong id="dist-fraud-count">—</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-      <!-- Right: Dual-Axis Time Series -->
-      <div class="col-lg-7">
+  <!-- 4. Charts Row 1: Time Series (Distribution moved to gauge section above) -->
+  <section class="mb-4">
+    <div class="row g-3">
+      <!-- Dual-Axis Time Series -->
+      <div class="col-lg-12 col-xl-12">
         <div class="chart-container">
           <div class="chart-header">
             <div>

@@ -89,10 +89,11 @@
         <table class="data-table" id="model-comparison-table">
           <thead>
             <tr>
-              <th style="width: 28%;">Evaluation Metric</th>
-              <th style="width: 24%;" class="text-accent-blue">Logistic Regression (L2)</th>
-              <th style="width: 24%;" class="text-accent-purple">Random Forest (Ensemble)</th>
-              <th style="width: 24%;">Optimal Benchmark</th>
+              <th style="width: 25%;">Evaluation Metric</th>
+              <th style="width: 20%;" class="text-accent-blue">Logistic Regression (L2)</th>
+              <th style="width: 20%;" class="text-accent-purple">Random Forest (Ensemble)</th>
+              <th style="width: 20%;" class="text-accent-cyan">XGBoost (Gradient Boost)</th>
+              <th style="width: 15%;">Benchmark</th>
             </tr>
           </thead>
           <tbody>
@@ -102,8 +103,9 @@
                 <div class="text-xs text-muted-custom">(TP + TN) / Total</div>
               </td>
               <td id="m-lr-acc" class="fw-semibold">0.9991</td>
-              <td id="m-rf-acc" class="fw-semibold text-accent-green">0.9996</td>
-              <td><span class="badge-custom badge-source" id="winner-acc">Random Forest</span></td>
+              <td id="m-rf-acc" class="fw-semibold">0.9996</td>
+              <td id="m-xgb-acc" class="fw-semibold text-accent-green">0.9997</td>
+              <td><span class="badge-custom badge-source" id="winner-acc">XGBoost</span></td>
             </tr>
             <tr>
               <td>
@@ -111,8 +113,9 @@
                 <div class="text-xs text-muted-custom">TP / (TP + FP) &bull; Minimize false alerts</div>
               </td>
               <td id="m-lr-prec" class="fw-semibold">0.8793</td>
-              <td id="m-rf-prec" class="fw-semibold text-accent-green">0.9385</td>
-              <td><span class="badge-custom badge-source" id="winner-prec">Random Forest</span></td>
+              <td id="m-rf-prec" class="fw-semibold">0.9385</td>
+              <td id="m-xgb-prec" class="fw-semibold text-accent-green">0.9487</td>
+              <td><span class="badge-custom badge-source" id="winner-prec">XGBoost</span></td>
             </tr>
             <tr>
               <td>
@@ -120,8 +123,9 @@
                 <div class="text-xs text-muted-custom">TP / (TP + FN) &bull; Catch true frauds</div>
               </td>
               <td id="m-lr-rec" class="fw-semibold">0.6218</td>
-              <td id="m-rf-rec" class="fw-semibold text-accent-green">0.7908</td>
-              <td><span class="badge-custom badge-source" id="winner-rec">Random Forest (+16.9%)</span></td>
+              <td id="m-rf-rec" class="fw-semibold">0.7908</td>
+              <td id="m-xgb-rec" class="fw-semibold text-accent-green">0.8265</td>
+              <td><span class="badge-custom badge-source" id="winner-rec">XGBoost (+20.5%)</span></td>
             </tr>
             <tr>
               <td>
@@ -129,8 +133,9 @@
                 <div class="text-xs text-muted-custom">2 &times; (Prec &times; Rec) / (Prec + Rec)</div>
               </td>
               <td id="m-lr-f1" class="fw-semibold">0.7290</td>
-              <td id="m-rf-f1" class="fw-semibold text-accent-green">0.8583</td>
-              <td><span class="badge-custom badge-source" id="winner-f1">Random Forest</span></td>
+              <td id="m-rf-f1" class="fw-semibold">0.8583</td>
+              <td id="m-xgb-f1" class="fw-semibold text-accent-green">0.8836</td>
+              <td><span class="badge-custom badge-source" id="winner-f1">XGBoost</span></td>
             </tr>
             <tr>
               <td>
@@ -138,8 +143,9 @@
                 <div class="text-xs text-muted-custom">Area under Receiver Operating Characteristic</div>
               </td>
               <td id="m-lr-roc" class="fw-semibold">0.9743</td>
-              <td id="m-rf-roc" class="fw-semibold text-accent-green">0.9892</td>
-              <td><span class="badge-custom badge-source" id="winner-roc">Random Forest</span></td>
+              <td id="m-rf-roc" class="fw-semibold">0.9892</td>
+              <td id="m-xgb-roc" class="fw-semibold text-accent-green">0.9915</td>
+              <td><span class="badge-custom badge-source" id="winner-roc">XGBoost</span></td>
             </tr>
             <tr>
               <td>
@@ -147,8 +153,9 @@
                 <div class="text-xs text-muted-custom">Average Precision on positive fraud class</div>
               </td>
               <td id="m-lr-prauc" class="fw-semibold">0.7890</td>
-              <td id="m-rf-prauc" class="fw-semibold text-accent-green">0.8741</td>
-              <td><span class="badge-custom badge-source" id="winner-prauc">Random Forest (+8.5%)</span></td>
+              <td id="m-rf-prauc" class="fw-semibold">0.8741</td>
+              <td id="m-xgb-prauc" class="fw-semibold text-accent-green">0.8924</td>
+              <td><span class="badge-custom badge-source" id="winner-prauc">XGBoost (+10.3%)</span></td>
             </tr>
           </tbody>
         </table>
@@ -199,41 +206,61 @@
     <!-- 5. Confusion Matrices (HTML 2x2 Grids) -->
     <div class="row g-3 mb-4">
       <!-- Logistic Regression Matrix -->
-      <div class="col-lg-6">
+      <div class="col-lg-4">
         <div class="app-card h-100">
           <div class="app-card-header">
             <div>
               <h3 class="app-card-title">
                 <i class="bi bi-grid-fill text-accent-blue"></i>
-                Logistic Regression Confusion Matrix
+                Logistic Regression
               </h3>
-              <span class="text-xs text-secondary-custom">Test Partition (N = 56,962 transactions)</span>
+              <span class="text-xs text-secondary-custom">Linear Baseline (Holdout)</span>
             </div>
-            <span class="badge-custom badge-source">Linear Baseline</span>
+            <span class="badge-custom badge-source">Linear</span>
           </div>
 
           <div id="cm-lr-container" class="mt-3">
-            <!-- Dynamically populated or rendered via JS function -->
+            <!-- Dynamically populated via JS -->
           </div>
         </div>
       </div>
 
       <!-- Random Forest Matrix -->
-      <div class="col-lg-6">
+      <div class="col-lg-4">
         <div class="app-card h-100">
           <div class="app-card-header">
             <div>
               <h3 class="app-card-title">
                 <i class="bi bi-grid-fill text-accent-purple"></i>
-                Random Forest Confusion Matrix
+                Random Forest
               </h3>
-              <span class="text-xs text-secondary-custom">Test Partition (N = 56,962 transactions)</span>
+              <span class="text-xs text-secondary-custom">Ensemble Trees</span>
             </div>
-            <span class="badge-custom badge-risk-low">Top Model</span>
+            <span class="badge-custom badge-risk-low">Ensemble</span>
           </div>
 
           <div id="cm-rf-container" class="mt-3">
-            <!-- Dynamically populated or rendered via JS function -->
+            <!-- Dynamically populated via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- XGBoost Matrix -->
+      <div class="col-lg-4">
+        <div class="app-card h-100">
+          <div class="app-card-header">
+            <div>
+              <h3 class="app-card-title">
+                <i class="bi bi-grid-fill text-accent-cyan"></i>
+                XGBoost Classifier
+              </h3>
+              <span class="text-xs text-secondary-custom">Gradient Boosted Trees</span>
+            </div>
+            <span class="badge-custom badge-risk-low">Gradient Boost</span>
+          </div>
+
+          <div id="cm-xgb-container" class="mt-3">
+            <!-- Dynamically populated via JS -->
           </div>
         </div>
       </div>

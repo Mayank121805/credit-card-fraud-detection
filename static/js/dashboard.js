@@ -9,6 +9,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Elements
   const uploadSection = document.getElementById('upload-section');
+  const datasetActiveBanner = document.getElementById('dataset-active-banner');
+  const changeDatasetBtn = document.getElementById('change-dataset-btn');
+  const activeDatasetName = document.getElementById('active-dataset-name');
+  const activeDatasetMeta = document.getElementById('active-dataset-meta');
   const trainingCtaSection = document.getElementById('training-cta-section');
   const dropzone = document.getElementById('dataset-dropzone');
   const fileInput = document.getElementById('dataset-file-input');
@@ -42,20 +46,31 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await App.api('/api/analytics/overview', { silent: true });
 
       if (!data || !data.dataset_loaded) {
-        // Dataset not loaded: show upload section prominently
+        // No dataset — show upload zone, hide active banner
         if (uploadSection) uploadSection.classList.remove('d-none');
+        if (datasetActiveBanner) datasetActiveBanner.classList.add('d-none');
         if (kpiTotalTx) kpiTotalTx.innerHTML = '<span class="text-secondary-custom">0</span>';
         if (kpiFraudTx) kpiFraudTx.innerHTML = '<span class="text-secondary-custom">0</span>';
         if (kpiLegitTx) kpiLegitTx.innerHTML = '<span class="text-secondary-custom">0</span>';
         if (kpiFraudRate) kpiFraudRate.innerHTML = '<span class="text-secondary-custom">0.00%</span>';
         if (kpiTotalAmount) kpiTotalAmount.innerHTML = '<span class="text-secondary-custom">$0.00</span>';
         if (kpiAvgAmount) kpiAvgAmount.innerHTML = '<span class="text-secondary-custom">$0.00</span>';
+        loadGaugeChart(0.172);
         return false;
       }
 
-      // Dataset loaded: optionally collapse or hide upload section
-      if (uploadSection) {
-        uploadSection.classList.add('d-none');
+      // Dataset loaded — hide upload zone, show active banner
+      if (uploadSection) uploadSection.classList.add('d-none');
+      if (datasetActiveBanner) datasetActiveBanner.classList.remove('d-none');
+
+      // Update active dataset banner info
+      const dsName = data.dataset_name || 'creditcard.csv';
+      if (activeDatasetName) activeDatasetName.textContent = dsName;
+      if (activeDatasetMeta) {
+        activeDatasetMeta.textContent =
+          `${App.formatNumber(data.total_transactions)} transactions · ` +
+          `${App.formatNumber(data.fraud_count)} fraud · ` +
+          `${App.formatPercent(data.fraud_rate, 3)} fraud rate`;
       }
 
       // Populate KPI cards
@@ -67,16 +82,88 @@ document.addEventListener('DOMContentLoaded', () => {
       if (kpiAvgAmount) kpiAvgAmount.textContent = App.formatCurrency(data.avg_amount);
       if (kpiDatasetName) kpiDatasetName.textContent = data.dataset_name || 'creditcard.csv';
 
+      // Load Gauge
+      const frVal = typeof data.fraud_rate === 'number' ? data.fraud_rate : 0.172;
+      loadGaugeChart(frVal);
+
       return true;
     } catch (err) {
       console.warn('Overview API not ready or dataset not found:', err);
       if (uploadSection) uploadSection.classList.remove('d-none');
+      if (datasetActiveBanner) datasetActiveBanner.classList.add('d-none');
       return false;
     }
   }
 
   /**
-   * 2. Load Class Distribution Chart
+   * 2. Gauge Chart (Fraud Rate Speedometer)
+   */
+  function loadGaugeChart(fraudRatePct) {
+    // fraudRatePct is e.g. 0.172 (percent, not decimal)
+    const maxRate = 5.0; // gauge goes 0 to 5%
+    const filled = Math.min(fraudRatePct, maxRate);
+    const empty = maxRate - filled;
+    const hidden = maxRate; // bottom half hidden to make semicircle
+
+    // Update risk label
+    const riskLabel = document.getElementById('gauge-risk-label');
+    if (riskLabel) {
+      if (fraudRatePct < 0.5) {
+        riskLabel.textContent = 'Low Risk';
+        riskLabel.className = 'badge-custom badge-risk-low';
+      } else if (fraudRatePct < 2.0) {
+        riskLabel.textContent = 'Medium Risk';
+        riskLabel.className = 'badge-custom badge-risk-medium';
+      } else {
+        riskLabel.textContent = 'High Risk';
+        riskLabel.className = 'badge-custom badge-risk-high';
+      }
+    }
+
+    App.createChart('chart-gauge', {
+      type: 'doughnut',
+      data: {
+        datasets: [{
+          data: [filled, empty, hidden],
+          backgroundColor: [
+            fraudRatePct < 0.5 ? '#3fb950' : fraudRatePct < 2.0 ? '#d29922' : '#f85149',
+            'rgba(48,54,61,0.4)',
+            'transparent'
+          ],
+          borderWidth: 0,
+          circumference: 180,
+          rotation: 270,
+        }]
+      },
+      options: {
+        cutout: '75%',
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false },
+        }
+      },
+      plugins: [{
+        id: 'gaugeText',
+        afterDraw(chart) {
+          const { ctx, chartArea: { left, right, bottom } } = chart;
+          const cx = (left + right) / 2;
+          const cy = bottom - 10;
+          ctx.save();
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#e6edf3';
+          ctx.font = 'bold 22px Inter, sans-serif';
+          ctx.fillText(`${fraudRatePct.toFixed(3)}%`, cx, cy - 20);
+          ctx.font = '11px Inter, sans-serif';
+          ctx.fillStyle = '#8b949e';
+          ctx.fillText('Fraud Rate', cx, cy);
+          ctx.restore();
+        }
+      }]
+    });
+  }
+
+  /**
+   * 3. Load Class Distribution Chart
    */
   async function loadDistributionChart() {
     try {
@@ -437,4 +524,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   setupUploadHandlers();
   loadDashboard();
+
+  /**
+   * "Change Dataset" button — clears server cache and shows upload zone again
+   */
+  if (changeDatasetBtn) {
+    changeDatasetBtn.addEventListener('click', async () => {
+      try {
+        // Tell the server to drop its in-memory dataset cache
+        await App.api('/api/dataset/clear', { method: 'POST', silent: true });
+      } catch (_) { /* cache clear is best-effort */ }
+
+      // Show upload zone, hide active banner, reset KPIs
+      if (datasetActiveBanner) datasetActiveBanner.classList.add('d-none');
+      if (uploadSection) uploadSection.classList.remove('d-none');
+
+      // Scroll upload section into view smoothly
+      uploadSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      App.showToast('Ready to load a new dataset. Drag & drop or select a CSV file.', 'info');
+    });
+  }
 });

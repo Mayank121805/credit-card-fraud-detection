@@ -3,6 +3,13 @@ import joblib
 import numpy as np
 import pandas as pd
 
+try:
+    import shap
+    _SHAP_AVAILABLE = True
+except ImportError:
+    _SHAP_AVAILABLE = False
+    print("[predict] SHAP not installed — SHAP explanations will be unavailable.")
+
 FEATURE_COLUMNS = ['Time'] + [f'V{i}' for i in range(1, 29)] + ['Amount']  # 30 features, no Class
 
 
@@ -32,6 +39,18 @@ def load_lr_model(model_folder: str):
         return joblib.load(lr_path)
     except Exception as e:
         print(f"[predict] Error loading LR model: {e}")
+        return None
+
+
+def load_xgb_model(model_folder: str):
+    """Load XGBoost model or return None."""
+    xgb_path = os.path.join(model_folder, 'xgboost.pkl')
+    if not os.path.exists(xgb_path):
+        return None
+    try:
+        return joblib.load(xgb_path)
+    except Exception as e:
+        print(f"[predict] Error loading XGBoost model: {e}")
         return None
 
 
@@ -77,6 +96,8 @@ def predict_single(transaction_dict: dict, model, scaler, threshold: float = 0.5
             model_name = 'LogisticRegression'
         elif 'Forest' in cls_name:
             model_name = 'RandomForest'
+        elif 'XGB' in cls_name or 'xgb' in cls_name.lower():
+            model_name = 'XGBoost'
 
     return {
         'prediction': int(prediction),
@@ -125,3 +146,62 @@ def predict_batch(df: pd.DataFrame, model, scaler, threshold: float = 0.5) -> pd
     result_df['Risk_Level'] = risk_levels
 
     return result_df
+
+
+def get_shap_explanation(transaction_dict: dict, model, scaler, top_n: int = 10) -> list:
+    """
+    Compute SHAP feature explanations for a single transaction.
+
+    Returns a list of dicts (sorted by abs shap_value desc, up to top_n):
+        [{"feature": "V14", "shap_value": -0.23, "direction": "decreases_fraud"}, ...]
+    Returns [] if SHAP is unavailable or computation fails.
+    """
+    if not _SHAP_AVAILABLE:
+        return []
+
+    try:
+        X = preprocess_input(transaction_dict, scaler)
+        cls_name = model.__class__.__name__
+
+        if 'Logistic' in cls_name:
+            explainer = shap.LinearExplainer(model, X, feature_perturbation='interventional')
+            shap_values = explainer.shap_values(X)
+            # LinearExplainer returns array of shape (n_samples, n_features) for binary
+            if isinstance(shap_values, list):
+                # list of arrays for each class
+                vals = shap_values[1][0] if len(shap_values) > 1 else shap_values[0][0]
+            else:
+                vals = shap_values[0]
+        else:
+            # Tree-based: RF or XGBoost
+            explainer = shap.TreeExplainer(model)
+            shap_values = explainer.shap_values(X)
+            # For binary classifiers shap_values may be a list [class0, class1]
+            if isinstance(shap_values, list):
+                vals = shap_values[1][0] if len(shap_values) > 1 else shap_values[0][0]
+            else:
+                # Single array output (XGBoost in some versions)
+                vals = shap_values[0]
+
+        vals = np.array(vals, dtype=float)
+        result = []
+        for i, feature in enumerate(FEATURE_COLUMNS):
+            sv = float(vals[i]) if i < len(vals) else 0.0
+            if sv > 0:
+                direction = 'increases_fraud'
+            elif sv < 0:
+                direction = 'decreases_fraud'
+            else:
+                direction = 'neutral'
+            result.append({
+                'feature': feature,
+                'shap_value': round(sv, 6),
+                'direction': direction
+            })
+
+        result.sort(key=lambda x: abs(x['shap_value']), reverse=True)
+        return result[:top_n]
+
+    except Exception as e:
+        print(f"[predict] SHAP explanation failed: {e}")
+        return []

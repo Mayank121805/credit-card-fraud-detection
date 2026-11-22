@@ -19,6 +19,15 @@ from src.train import ModelTrainer, training_status
 
 ml_bp = Blueprint('ml', __name__)
 
+# Reference to the analytics module's dataset cache (set lazily)
+def clear_dataset_cache():
+    """Called by analytics clear endpoint to reset any ML-side dataset state."""
+    try:
+        from api.analytics import invalidate_analytics_cache
+        invalidate_analytics_cache()
+    except Exception:
+        pass
+
 
 @ml_bp.route('/api/ml/train', methods=['POST'])
 @ml_bp.route('/ml/train', methods=['POST'])
@@ -130,12 +139,26 @@ def predict_transaction():
 
     try:
         threshold = float(data.get('threshold', 0.5))
+        threshold = max(0.01, min(0.99, threshold))
     except (ValueError, TypeError):
         threshold = 0.5
 
     try:
         result = predict_single(data, model, scaler, threshold=threshold)
         amount = float(data.get('Amount', 0.0))
+
+        # Optional SHAP explanation
+        explain = data.get('explain', True)
+        shap_values = []
+        if explain:
+            try:
+                from src.predict import get_shap_explanation
+                shap_values = get_shap_explanation(data, model, scaler)
+            except Exception as shap_err:
+                print(f"[ml] SHAP computation error: {shap_err}")
+                shap_values = []
+        result['shap_explanation'] = shap_values
+        result['threshold_used'] = threshold
 
         # Record in database
         try:
@@ -245,3 +268,47 @@ def predict_batch_transactions():
 
     except Exception as e:
         return jsonify({'error': f'Batch processing failed: {str(e)}'}), 500
+
+
+@ml_bp.route('/api/ml/threshold-analysis', methods=['GET'])
+@ml_bp.route('/ml/threshold-analysis', methods=['GET'])
+def threshold_analysis():
+    """Return precision/recall at thresholds 0.05 to 0.95 for the primary model."""
+    model_folder = current_app.config.get(
+        'MODEL_FOLDER',
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), 'models')
+    )
+    metrics_path = os.path.join(model_folder, 'metrics.json')
+    if not os.path.exists(metrics_path):
+        return jsonify({'available': False, 'message': 'No trained model metrics found'}), 200
+
+    try:
+        with open(metrics_path, 'r', encoding='utf-8') as f:
+            metrics = json.load(f)
+
+        # Prefer Random Forest or XGBoost pr_curve
+        rf = metrics.get('random_forest', {})
+        pr_curve = rf.get('pr_curve', {})
+        thresholds = pr_curve.get('thresholds', [])
+        precisions = pr_curve.get('precision', [])
+        recalls = pr_curve.get('recall', [])
+
+        if not thresholds:
+            return jsonify({'available': False, 'message': 'PR curve data not available'}), 200
+
+        import numpy as np
+        target_thresholds = np.linspace(0.05, 0.95, 19).tolist()
+        result_points = []
+        thr_arr = np.array(thresholds)
+
+        for t in target_thresholds:
+            idx = int(np.argmin(np.abs(thr_arr - t)))
+            result_points.append({
+                'threshold': round(float(t), 2),
+                'precision': round(float(precisions[idx]), 4) if idx < len(precisions) else None,
+                'recall': round(float(recalls[idx]), 4) if idx < len(recalls) else None,
+            })
+
+        return jsonify({'available': True, 'points': result_points}), 200
+    except Exception as e:
+        return jsonify({'available': False, 'error': str(e)}), 500

@@ -148,6 +148,28 @@
                 </div>
               </div>
 
+              <!-- Threshold Slider -->
+              <div class="app-card mb-3 p-3 bg-elevated-custom rounded border-custom" style="border: 1px solid rgba(88,166,255,0.2) !important;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <label class="text-xs fw-semibold text-primary-custom mb-0">
+                    <i class="bi bi-sliders me-1 text-accent-blue"></i>Classification Threshold
+                  </label>
+                  <span class="badge-custom badge-risk-medium text-xs" id="threshold-value-display">0.50</span>
+                </div>
+                <input type="range" class="form-range" id="threshold-slider" min="0.05" max="0.95" step="0.05" value="0.50" style="accent-color: #58a6ff;">
+                <div class="d-flex justify-content-between text-xs text-muted-custom mt-1">
+                  <span>0.05 — High Recall (Catch All)</span>
+                  <span>0.50 — Balanced</span>
+                  <span>0.95 — High Precision (Low FP)</span>
+                </div>
+                <!-- Live Precision/Recall hint -->
+                <div class="mt-2 d-flex gap-3 align-items-center" id="threshold-pr-hint" style="display:none!important;">
+                  <span class="text-xs"><span class="text-accent-blue fw-semibold">Precision:</span> <span id="thr-precision">—</span></span>
+                  <span class="text-xs"><span class="text-accent-green fw-semibold">Recall:</span> <span id="thr-recall">—</span></span>
+                  <span class="text-xs text-secondary-custom">(from test set)</span>
+                </div>
+              </div>
+
               <!-- Submit Button -->
               <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top border-subtle-custom">
                 <div class="text-xs text-secondary-custom">
@@ -225,6 +247,25 @@
             <div class="alert-custom p-2 mb-0" id="result-recommendation" style="font-size: 11.5px;">
               <i class="bi bi-shield-check text-accent-green fs-6"></i>
               <span>Transaction characteristics match standard normal patterns. No security action required.</span>
+            </div>
+
+            <!-- SHAP Explanation (shown after prediction) -->
+            <div id="shap-explanation-section" class="d-none mt-3">
+              <div class="p-3 bg-elevated-custom rounded border-custom">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="text-xs fw-bold text-primary-custom">
+                    <i class="bi bi-bar-chart-steps me-1 text-accent-blue"></i>SHAP Feature Impact
+                  </span>
+                  <span class="text-xs text-secondary-custom">Top Factors</span>
+                </div>
+                <div style="position: relative; height: 200px;">
+                  <canvas id="chart-shap"></canvas>
+                </div>
+                <div class="mt-2 text-xs text-secondary-custom d-flex justify-content-between">
+                  <span><span class="text-accent-red">■</span> Increases Risk</span>
+                  <span><span class="text-accent-green">■</span> Decreases Risk</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

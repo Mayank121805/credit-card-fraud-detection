@@ -7,6 +7,13 @@ import joblib
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 
+try:
+    from xgboost import XGBClassifier
+    _XGBOOST_AVAILABLE = True
+except ImportError:
+    _XGBOOST_AVAILABLE = False
+    print("[train] XGBoost not installed — XGBoost model will be skipped.")
+
 from src.preprocessing import DataPreprocessor, FEATURE_COLUMNS
 from src.evaluation import compute_all_metrics, get_feature_importance
 
@@ -68,6 +75,29 @@ class ModelTrainer:
         # 3. Feature Importance from Random Forest
         feature_importance = get_feature_importance(rf_model, FEATURE_COLUMNS)
 
+        # 3b. Train XGBoost (if available)
+        xgb_metrics = None
+        xgb_feature_importance = None
+        xgb_duration = 0.0
+        if _XGBOOST_AVAILABLE:
+            t_start_xgb = time.time()
+            xgb_model = XGBClassifier(
+                n_estimators=100,
+                max_depth=6,
+                learning_rate=0.1,
+                scale_pos_weight=float((y_train == 0).sum()) / float((y_train == 1).sum()),
+                random_state=42,
+                eval_metric='logloss',
+                use_label_encoder=False,
+                n_jobs=-1
+            )
+            xgb_model.fit(X_train, y_train)
+            xgb_duration = time.time() - t_start_xgb
+            xgb_metrics = compute_all_metrics(xgb_model, X_test, y_test, 'XGBoost', threshold=0.5)
+            xgb_metrics['training_time_seconds'] = round(float(xgb_duration), 2)
+            xgb_feature_importance = get_feature_importance(xgb_model, FEATURE_COLUMNS)
+            joblib.dump(xgb_model, os.path.join(self.model_folder, 'xgboost.pkl'))
+
         # 4. Save models with joblib
         os.makedirs(self.model_folder, exist_ok=True)
         lr_path = os.path.join(self.model_folder, 'logistic_regression.pkl')
@@ -85,6 +115,10 @@ class ModelTrainer:
             'random_forest': rf_metrics,
             'feature_importance': feature_importance
         }
+        if xgb_metrics is not None:
+            all_metrics['xgboost'] = xgb_metrics
+        if xgb_feature_importance is not None:
+            all_metrics['xgb_feature_importance'] = xgb_feature_importance
 
         metrics_path = os.path.join(self.model_folder, 'metrics.json')
         with open(metrics_path, 'w', encoding='utf-8') as f:
@@ -133,6 +167,26 @@ class ModelTrainer:
                     is_active=True
                 )
                 db_session.add(reg_rf)
+
+                # Register XGBoost (if trained)
+                if _XGBOOST_AVAILABLE and xgb_metrics is not None:
+                    reg_xgb = ModelRegistry(
+                        model_name='XGBoost',
+                        version='1.0.0',
+                        trained_at=datetime.utcnow(),
+                        training_rows=len(X_train),
+                        test_rows=len(X_test),
+                        accuracy=xgb_metrics['accuracy'],
+                        precision_score=xgb_metrics['precision'],
+                        recall_score=xgb_metrics['recall'],
+                        f1_score=xgb_metrics['f1'],
+                        roc_auc=xgb_metrics['roc_auc'],
+                        pr_auc=xgb_metrics['pr_auc'],
+                        training_time_seconds=xgb_duration,
+                        is_active=False
+                    )
+                    db_session.add(reg_xgb)
+
                 db_session.commit()
             except Exception as e:
                 db_session.rollback()
@@ -187,10 +241,15 @@ class ModelTrainer:
             # We execute training and database saving with app context if provided
             def _execute(session):
                 # 60% -> Train LR
-                # 80% -> Train RF
+                # 75% -> Train RF
                 training_status.update({
                     'progress': 75,
                     'message': 'Training Random Forest model (balanced weights)...'
+                })
+                # 80% -> Train XGBoost
+                training_status.update({
+                    'progress': 80,
+                    'message': 'Training XGBoost model...'
                 })
                 self.train_all(X_train, y_train, X_test, y_test, db_session=session)
 

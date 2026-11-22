@@ -10,8 +10,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Elements
   const historyTbody = document.getElementById('history-tbody');
   const emptyState = document.getElementById('history-empty-state');
+  const filterSearch = document.getElementById('filter-search');
   const filterLabel = document.getElementById('filter-label');
-  const filterSource = document.getElementById('filter-source');
+  const filterSort = document.getElementById('filter-sort');
+  const filterProbMin = document.getElementById('filter-prob-min');
+  const filterAmountMin = document.getElementById('filter-amount-min');
+  const filterAmountMax = document.getElementById('filter-amount-max');
+  const btnResetFilters = document.getElementById('btn-reset-filters');
+  const filterResultsCount = document.getElementById('filter-results-count');
   const btnPrev = document.getElementById('btn-page-prev');
   const btnNext = document.getElementById('btn-page-next');
   const pageNumbersContainer = document.getElementById('pagination-numbers');
@@ -28,6 +34,33 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentPage = 1;
   let totalPages = 1;
   const perPage = 20;
+  let searchDebounceTimer = null;
+
+  function buildHistoryUrl(page = 1) {
+    const params = new URLSearchParams();
+    params.set('page', page);
+    params.set('per_page', perPage);
+
+    const search = filterSearch?.value?.trim();
+    if (search) params.set('search', search);
+
+    const label = filterLabel?.value;
+    if (label && label !== 'all') params.set('filter', label);
+
+    const sort = filterSort?.value;
+    if (sort) params.set('sort_by', sort);
+
+    const probMin = filterProbMin?.value?.trim();
+    if (probMin) params.set('prob_min', probMin);
+
+    const amtMin = filterAmountMin?.value?.trim();
+    if (amtMin) params.set('amount_min', amtMin);
+
+    const amtMax = filterAmountMax?.value?.trim();
+    if (amtMax) params.set('amount_max', amtMax);
+
+    return `/api/history?${params.toString()}`;
+  }
 
   /**
    * 1. Load History Statistics
@@ -57,12 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   async function loadHistoryTable(page = 1) {
     currentPage = page;
-    const label = filterLabel ? filterLabel.value : 'all';
-    const source = filterSource ? filterSource.value : 'all';
-
-    let endpoint = `/api/history?page=${page}&per_page=${perPage}`;
-    if (label && label !== 'all') endpoint += `&label=${encodeURIComponent(label)}`;
-    if (source && source !== 'all') endpoint += `&source=${encodeURIComponent(source)}`;
+    const endpoint = buildHistoryUrl(page);
 
     if (historyTbody) {
       historyTbody.innerHTML = `
@@ -80,6 +108,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const records = data && data.history ? data.history : [];
       totalPages = (data && data.pages) ? data.pages : 1;
+      const totalCount = data && typeof data.total === 'number' ? data.total : records.length;
+
+      if (filterResultsCount) {
+        filterResultsCount.textContent = `${App.formatNumber(totalCount)} record${totalCount === 1 ? '' : 's'} found`;
+      }
 
       if (records.length === 0) {
         if (historyTbody) historyTbody.innerHTML = '';
@@ -90,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (emptyState) emptyState.classList.add('d-none');
       renderRows(records);
-      renderPagination(data.total || records.length, data.pages || 1);
+      renderPagination(totalCount, totalPages);
     } catch (err) {
       console.warn('History table fetch error, falling back to mock logs:', err);
       // Fallback mock history for visual completeness if backend is empty
@@ -208,8 +241,48 @@ document.addEventListener('DOMContentLoaded', () => {
     filterLabel.addEventListener('change', () => loadHistoryTable(1));
   }
 
-  if (filterSource) {
-    filterSource.addEventListener('change', () => loadHistoryTable(1));
+  if (filterSort) {
+    filterSort.addEventListener('change', () => loadHistoryTable(1));
+  }
+
+  if (filterProbMin) {
+    filterProbMin.addEventListener('input', () => {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => loadHistoryTable(1), 350);
+    });
+  }
+
+  if (filterAmountMin) {
+    filterAmountMin.addEventListener('input', () => {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => loadHistoryTable(1), 350);
+    });
+  }
+
+  if (filterAmountMax) {
+    filterAmountMax.addEventListener('input', () => {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => loadHistoryTable(1), 350);
+    });
+  }
+
+  if (filterSearch) {
+    filterSearch.addEventListener('input', () => {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => loadHistoryTable(1), 350);
+    });
+  }
+
+  if (btnResetFilters) {
+    btnResetFilters.addEventListener('click', () => {
+      if (filterSearch) filterSearch.value = '';
+      if (filterLabel) filterLabel.value = 'all';
+      if (filterSort) filterSort.value = 'timestamp_desc';
+      if (filterProbMin) filterProbMin.value = '';
+      if (filterAmountMin) filterAmountMin.value = '';
+      if (filterAmountMax) filterAmountMax.value = '';
+      loadHistoryTable(1);
+    });
   }
 
   /**

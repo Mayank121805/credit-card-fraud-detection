@@ -54,6 +54,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let selectedBatchFile = null;
   let lastBatchResultsData = null;
+  let thresholdPoints = [];
+
+  /**
+   * Threshold Slider Setup & Live PR Feedback
+   */
+  const thresholdSlider = document.getElementById('threshold-slider');
+  const thresholdValueDisplay = document.getElementById('threshold-value-display');
+  const thresholdPrHint = document.getElementById('threshold-pr-hint');
+  const thrPrecision = document.getElementById('thr-precision');
+  const thrRecall = document.getElementById('thr-recall');
+
+  async function loadThresholdData() {
+    try {
+      const data = await App.api('/api/ml/threshold-analysis', { silent: true });
+      if (data && data.available && Array.isArray(data.points) && data.points.length > 0) {
+        thresholdPoints = data.points;
+        if (thresholdPrHint) thresholdPrHint.style.setProperty('display', 'flex', 'important');
+        updateThresholdDisplay(thresholdSlider ? parseFloat(thresholdSlider.value) : 0.5);
+      }
+    } catch (_) {}
+  }
+
+  function updateThresholdDisplay(val) {
+    if (thresholdValueDisplay) thresholdValueDisplay.textContent = val.toFixed(2);
+    if (!thresholdPoints || thresholdPoints.length === 0) return;
+    const nearest = thresholdPoints.reduce((a, b) =>
+      Math.abs(b.threshold - val) < Math.abs(a.threshold - val) ? b : a
+    );
+    if (thrPrecision && nearest.precision != null) thrPrecision.textContent = `${(nearest.precision * 100).toFixed(1)}%`;
+    if (thrRecall && nearest.recall != null) thrRecall.textContent = `${(nearest.recall * 100).toFixed(1)}%`;
+  }
+
+  if (thresholdSlider) {
+    thresholdSlider.addEventListener('input', () => {
+      updateThresholdDisplay(parseFloat(thresholdSlider.value));
+    });
+  }
 
   /**
    * 1. Check Model Status on Load
@@ -164,7 +201,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // Collect payload
       const payload = {
         Amount: amountVal,
-        Time: parseFloat(timeInput.value || '0.0')
+        Time: parseFloat(timeInput.value || '0.0'),
+        threshold: thresholdSlider ? parseFloat(thresholdSlider.value) : 0.5,
+        explain: true
       };
 
       for (let i = 1; i <= 28; i++) {
@@ -277,6 +316,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
       App.showToast('Transaction verified as LEGITIMATE.', 'success');
     }
+
+    // Render SHAP Feature Impact
+    renderShapChart(res.shap_explanation || []);
+  }
+
+  function renderShapChart(shapData) {
+    const section = document.getElementById('shap-explanation-section');
+    if (!section) return;
+    if (!shapData || !Array.isArray(shapData) || shapData.length === 0) {
+      section.classList.add('d-none');
+      return;
+    }
+
+    section.classList.remove('d-none');
+
+    const labels = shapData.map(d => d.feature);
+    const values = shapData.map(d => d.shap_value);
+    const colors = values.map(v => v > 0 ? 'rgba(248, 81, 73, 0.85)' : 'rgba(63, 185, 80, 0.85)');
+    const borderColors = values.map(v => v > 0 ? '#f85149' : '#3fb950');
+
+    App.createChart('chart-shap', {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Impact on Fraud Risk',
+          data: values,
+          backgroundColor: colors,
+          borderColor: borderColors,
+          borderWidth: 1,
+          borderRadius: 3
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const v = ctx.raw;
+                const dir = v > 0 ? '▲ Increases Risk' : '▼ Decreases Risk';
+                return ` ${v > 0 ? '+' : ''}${Number(v).toFixed(4)} (${dir})`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(48, 54, 61, 0.4)' },
+            ticks: { color: '#8b949e', font: { size: 10 } }
+          },
+          y: {
+            grid: { display: false },
+            ticks: { color: '#c9d1d9', font: { size: 10 } }
+          }
+        }
+      }
+    });
   }
 
   /**
@@ -515,4 +615,5 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   checkModelStatus();
+  loadThresholdData();
 });

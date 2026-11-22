@@ -88,40 +88,73 @@
 
   <!-- 2. Filter & Action Bar -->
   <div class="app-card mb-4 p-3 border-subtle-custom">
-    <div class="row g-3 align-items-center justify-content-between">
-      <!-- Filters -->
-      <div class="col-md-7">
-        <div class="d-flex flex-wrap align-items-center gap-3">
-          <div class="d-flex align-items-center gap-2">
-            <label for="filter-label" class="form-label-custom mb-0 text-nowrap">Filter Status:</label>
-            <select class="form-select form-select-custom text-xs py-1" id="filter-label" style="width: 140px;">
-              <option value="all">All Classes</option>
-              <option value="fraud">Fraudulent Only</option>
-              <option value="legitimate">Legitimate Only</option>
-            </select>
-          </div>
-
-          <div class="d-flex align-items-center gap-2">
-            <label for="filter-source" class="form-label-custom mb-0 text-nowrap">Source:</label>
-            <select class="form-select form-select-custom text-xs py-1" id="filter-source" style="width: 130px;">
-              <option value="all">All Sources</option>
-              <option value="single">Single Manual</option>
-              <option value="batch">Batch Upload</option>
-            </select>
-          </div>
+    <div class="row g-3 align-items-end">
+      <!-- Search input -->
+      <div class="col-md-3">
+        <label for="filter-search" class="form-label-custom mb-1 text-nowrap">Search Records:</label>
+        <div class="input-group">
+          <span class="input-group-text bg-surface-custom border-custom text-secondary-custom py-1 px-2">
+            <i class="bi bi-search text-xs"></i>
+          </span>
+          <input type="text" class="form-control form-control-custom text-xs py-1" id="filter-search" placeholder="Label, model, source...">
         </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="col-md-5 text-md-end">
-        <div class="d-flex flex-wrap gap-2 justify-content-md-end">
-          <button type="button" class="btn-custom btn-outline-custom text-xs" id="btn-export-history">
-            <i class="bi bi-download"></i> Export CSV
-          </button>
-          <button type="button" class="btn-custom btn-danger-custom text-xs" id="btn-open-clear-modal" data-bs-toggle="modal" data-bs-target="#clearHistoryModal">
-            <i class="bi bi-trash3"></i> Clear History
-          </button>
+      <!-- Class filter -->
+      <div class="col-md-2">
+        <label for="filter-label" class="form-label-custom mb-1 text-nowrap">Status:</label>
+        <select class="form-select form-select-custom text-xs py-1" id="filter-label">
+          <option value="all">All Classes</option>
+          <option value="fraud">Fraudulent Only</option>
+          <option value="legitimate">Legitimate Only</option>
+        </select>
+      </div>
+
+      <!-- Sort dropdown -->
+      <div class="col-md-2">
+        <label for="filter-sort" class="form-label-custom mb-1 text-nowrap">Sort Order:</label>
+        <select class="form-select form-select-custom text-xs py-1" id="filter-sort">
+          <option value="timestamp_desc">Newest First</option>
+          <option value="timestamp_asc">Oldest First</option>
+          <option value="prob_desc">Highest Risk First</option>
+          <option value="prob_asc">Lowest Risk First</option>
+          <option value="amount_desc">Highest Amount</option>
+          <option value="amount_asc">Lowest Amount</option>
+        </select>
+      </div>
+
+      <!-- Min Probability -->
+      <div class="col-md-2">
+        <label for="filter-prob-min" class="form-label-custom mb-1 text-nowrap">Min Risk Score:</label>
+        <input type="number" step="0.05" min="0" max="1" class="form-control form-control-custom text-xs py-1" id="filter-prob-min" placeholder="e.g. 0.50">
+      </div>
+
+      <!-- Amount Range -->
+      <div class="col-md-3">
+        <label class="form-label-custom mb-1 text-nowrap">Amount Range ($):</label>
+        <div class="d-flex gap-1">
+          <input type="number" step="1" min="0" class="form-control form-control-custom text-xs py-1" id="filter-amount-min" placeholder="Min $">
+          <input type="number" step="1" min="0" class="form-control form-control-custom text-xs py-1" id="filter-amount-max" placeholder="Max $">
         </div>
+      </div>
+    </div>
+
+    <!-- Second row: Action Buttons & Reset -->
+    <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top border-subtle-custom flex-wrap gap-2">
+      <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn-custom btn-secondary-custom text-xs py-1" id="btn-reset-filters">
+          <i class="bi bi-arrow-counterclockwise"></i> Reset Filters
+        </button>
+        <span class="text-xs text-secondary-custom" id="filter-results-count"></span>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="button" class="btn-custom btn-outline-custom text-xs" id="btn-export-history">
+          <i class="bi bi-download"></i> Export CSV
+        </button>
+        <button type="button" class="btn-custom btn-danger-custom text-xs" id="btn-open-clear-modal" data-bs-toggle="modal" data-bs-target="#clearHistoryModal">
+          <i class="bi bi-trash3"></i> Clear History
+        </button>
       </div>
     </div>
   </div>

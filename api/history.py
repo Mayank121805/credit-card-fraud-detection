@@ -11,10 +11,21 @@ history_bp = Blueprint('history', __name__)
 
 
 @history_bp.route('/api/history', methods=['GET'])
+@history_bp.route('/history', methods=['GET'])
 def get_prediction_history():
     """
-    Return paginated list of prediction history records.
-    Query params: page (default 1), per_page (default 20), filter ('all', 'fraud', 'legitimate').
+    Return paginated list of prediction history records with advanced filtering and sorting.
+    Query params:
+        page (int): default 1
+        per_page (int): default 20
+        filter (str): 'all', 'fraud', 'legitimate'
+        search (str): text match on label, model_used, source
+        amount_min (float): minimum transaction amount
+        amount_max (float): maximum transaction amount
+        prob_min (float): minimum fraud probability (0.0 to 1.0)
+        date_from (str): ISO date string
+        date_to (str): ISO date string
+        sort_by (str): 'timestamp_desc', 'timestamp_asc', 'prob_desc', 'prob_asc', 'amount_desc', 'amount_asc'
     """
     try:
         page = max(1, int(request.args.get('page', 1)))
@@ -24,20 +35,85 @@ def get_prediction_history():
         per_page = 20
 
     filter_type = request.args.get('filter', 'all').lower()
+    search = request.args.get('search', '').strip()
+    sort_by = request.args.get('sort_by', 'timestamp_desc').lower()
 
     query = db.session.query(PredictionLog)
 
+    # Class filter
     if filter_type in ('fraud', '1'):
         query = query.filter(PredictionLog.prediction == 1)
     elif filter_type in ('legitimate', 'legit', '0'):
         query = query.filter(PredictionLog.prediction == 0)
 
+    # Search filter (label, model_used, source)
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.filter(
+            (PredictionLog.label.ilike(search_pattern)) |
+            (PredictionLog.model_used.ilike(search_pattern)) |
+            (PredictionLog.source.ilike(search_pattern))
+        )
+
+    # Amount filters
+    try:
+        amt_min = request.args.get('amount_min')
+        if amt_min not in (None, ''):
+            query = query.filter(PredictionLog.transaction_amount >= float(amt_min))
+    except (ValueError, TypeError):
+        pass
+
+    try:
+        amt_max = request.args.get('amount_max')
+        if amt_max not in (None, ''):
+            query = query.filter(PredictionLog.transaction_amount <= float(amt_max))
+    except (ValueError, TypeError):
+        pass
+
+    # Probability minimum filter
+    try:
+        prob_min = request.args.get('prob_min')
+        if prob_min not in (None, ''):
+            query = query.filter(PredictionLog.probability_fraud >= float(prob_min))
+    except (ValueError, TypeError):
+        pass
+
+    # Date range filters
+    date_from = request.args.get('date_from')
+    if date_from:
+        try:
+            dt_from = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+            query = query.filter(PredictionLog.timestamp >= dt_from)
+        except Exception:
+            pass
+
+    date_to = request.args.get('date_to')
+    if date_to:
+        try:
+            dt_to = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+            query = query.filter(PredictionLog.timestamp <= dt_to)
+        except Exception:
+            pass
+
+    # Sorting
+    if sort_by == 'timestamp_asc':
+        query = query.order_by(PredictionLog.timestamp.asc())
+    elif sort_by == 'prob_desc':
+        query = query.order_by(PredictionLog.probability_fraud.desc())
+    elif sort_by == 'prob_asc':
+        query = query.order_by(PredictionLog.probability_fraud.asc())
+    elif sort_by == 'amount_desc':
+        query = query.order_by(PredictionLog.transaction_amount.desc())
+    elif sort_by == 'amount_asc':
+        query = query.order_by(PredictionLog.transaction_amount.asc())
+    else:  # timestamp_desc
+        query = query.order_by(PredictionLog.timestamp.desc())
+
     total = query.count()
     pages = (total + per_page - 1) // per_page if total > 0 else 1
 
     records = (
-        query.order_by(PredictionLog.timestamp.desc())
-        .offset((page - 1) * per_page)
+        query.offset((page - 1) * per_page)
         .limit(per_page)
         .all()
     )

@@ -199,6 +199,28 @@ def get_all_analytics():
     return jsonify(resp), 200
 
 
+@analytics_bp.route('/api/dataset/clear', methods=['POST'])
+@analytics_bp.route('/dataset/clear', methods=['POST'])
+def clear_dataset():
+    """
+    Clear the in-memory dataset and analytics cache so a new CSV can be uploaded.
+    Does NOT delete any files from disk — only resets the server-side cache.
+    """
+    invalidate_analytics_cache()
+
+    # Also clear the ML module's cached dataset reference if available
+    try:
+        from api.ml import clear_dataset_cache as ml_clear
+        ml_clear()
+    except (ImportError, AttributeError):
+        pass
+
+    return jsonify({
+        'success': True,
+        'message': 'Dataset cache cleared. Upload a new CSV to continue.'
+    }), 200
+
+
 @analytics_bp.route('/api/dataset/upload', methods=['POST'])
 @analytics_bp.route('/api/analytics/upload', methods=['POST'])
 @analytics_bp.route('/dataset/upload', methods=['POST'])
